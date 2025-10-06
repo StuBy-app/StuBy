@@ -1,8 +1,9 @@
 package org.example.stuby_back.security.model;
 
 import java.util.Map;
+
+import org.example.stuby_back.domain.user.User;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
 
 /*
