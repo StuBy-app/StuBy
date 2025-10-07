@@ -15,6 +15,7 @@ public interface UserMapper {
     int deleteByUserId(Integer userId);
     int deleteByUserIds(List<Integer> userIds);
 
+    // 아이디 중복 확인
     User findByUsername(String username);
 
     // 회원삭제
@@ -23,5 +24,5 @@ public interface UserMapper {
     // 프로필 수정
     int updateName(Integer userId, String name);
     String getProfileImgPath(Integer userId);
-    int updateProfileImgPath(Integer userId, @Param("profileImg") String profileImgPath);
+        int updateProfileImgPath(Integer userId, @Param("profileImg") String profileImgPath);
 }
