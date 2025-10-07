@@ -37,7 +37,6 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
         // Google에서 제공하는 정보를 가져옴.
         if ("google".equals(registrationId)) {
             email = oAuth2User.getAttribute("email");
-            name = oAuth2User.getAttribute("name");
             providerId = oAuth2User.getAttribute("sub");
             profileImgPath = oAuth2User.getAttribute("picture");
 
@@ -48,14 +47,12 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
             Map<String, Object> profile = (Map<String, Object>) kakaoAccount.get("profile");
 
             email = kakaoAccount.get("email").toString();
-            name = profile.get("nickname").toString();
             providerId = attributes.get("id").toString();
             profileImgPath = profile.get("profile_image_url").toString();
         } else if ("naver".equals(registrationId)) {
             Map<String, Object> response = (Map<String, Object>) attributes.get("response");
 
             email = response.get("email").toString();
-            name = response.get("nickname").toString();
             providerId = response.get("id").toString();
             profileImgPath = response.get("profile_image").toString();
 
