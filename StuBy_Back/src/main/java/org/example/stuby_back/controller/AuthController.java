@@ -14,21 +14,24 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
     private final AuthService authService;
 
-//    @PostMapping("/auth/join")
-//    public ResponseEntity<?> join(@RequestBody @Valid JoinReqDto dto) throws BindException {
-//        return ResponseEntity.ok(ResponseDto.success(authService.join(dto)));
-//    }
+    /*
+        회원가입 API
+     */
+    @PostMapping("/join")
+    public ResponseEntity<?> join(@RequestBody @Valid JoinReqDto dto) throws BindException {
+        return ResponseEntity.ok(ResponseDto.success(authService.join(dto)));
+    }
 
     /*
         로그인 API
     */
-    @PostMapping("/auth/login")
+    @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginReqDto dto) {
         return ResponseEntity.ok(ResponseDto.success(authService.login(dto)));
     }

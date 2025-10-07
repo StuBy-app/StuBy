@@ -2,10 +2,13 @@ package org.example.stuby_back.domain.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.example.stuby_back.domain.userRole.UserRole;
 
 @Data
 @Builder
@@ -14,6 +17,7 @@ import lombok.NoArgsConstructor;
 public class User {
     private Integer userId;
     private String username;
+    @JsonIgnore
     private String password;
     private Integer schoolId;
     private Integer schoolGrade;
@@ -27,4 +31,6 @@ public class User {
     private String providerId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    private List<UserRole> userRoles;
 }
