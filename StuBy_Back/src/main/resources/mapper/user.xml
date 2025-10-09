@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.example.stuby_back.domain.user.UserMapper">
+    <resultMap id="UserMap" type="org.example.stuby_back.domain.user.User">
+        <id property="userId" column="user_id"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <result property="schoolId" column="school_id"/>
+        <result property="schoolGrade" column="school_grade"/>
+        <result property="name" column="name"/>
+        <result property="age" column="age"/>
+        <result property="email" column="email"/>
+        <result property="gender" column="gender"/>
+        <result property="profileImgPath" column="profile_img_path"/>
+        <result property="role" column="role"/>
+        <result property="provider" column="provider"/>
+        <result property="providerId" column="provider_id"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="userId">
+        insert into user_tb
+        values (default, #{username}, #{password}, #{schoolId}, #{schoolGrade}, #{name}, #{age},
+        #{email}, #{gender}, #{profileImgPath}, #{role}, #{provider}, #{providerId}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <select id="findByUsername" resultMap="UserMap">
+        select
+            *
+        from
+            user_tb
+        where
+            username = #{username}
+    </select>
+
+
+</mapper>

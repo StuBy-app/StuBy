@@ -1,6 +1,5 @@
 package org.example.stuby_back.service;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.stuby_back.domain.role.Role;
 import org.example.stuby_back.domain.role.RoleMapper;
@@ -20,7 +19,6 @@ import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 
@@ -41,7 +39,7 @@ public class AuthService {
         User foundUser = userMapper.findByUsername(dto.getUsername());
         if (foundUser == null) {
             BindingResult bindingResult = new BeanPropertyBindingResult(foundUser, "");
-            FieldError fieldError = new FieldError("username", "username", "이미 존재하는 사용자 이름입니다.");
+            FieldError fieldError = new FieldError("username", "username", "이미 존재하는 아이디입니다.");
             bindingResult.addError(fieldError);
             throw new BindException(bindingResult);
         }
