@@ -1,10 +1,16 @@
 package org.example.stuby_back.service;
 
 import java.util.Map;
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
+import org.example.stuby_back.domain.role.Role;
+import org.example.stuby_back.domain.role.RoleMapper;
 import org.example.stuby_back.domain.user.User;
 import org.example.stuby_back.domain.user.UserMapper;
+import org.example.stuby_back.domain.userRole.UserRoleMapper;
 import org.example.stuby_back.security.model.PrincipalUser;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
@@ -20,14 +26,17 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class OAuth2UserService extends DefaultOAuth2UserService {
+
     private final UserMapper userMapper;
+    private final UserRoleMapper userRoleMapper;
+    private final RoleMapper roleMapper;
+    private final BCryptPasswordEncoder passwordEncoder;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         String registrationId = userRequest.getClientRegistration().getRegistrationId();
         String email = null;
-        String name = null;
         String providerId = null;
         String profileImgPath = null;
 
@@ -68,16 +77,16 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
         // not null 추가
         if (user == null) {
             user = User.builder()
-                    .username(providerId)
-                    .name(name)
                     .email(email)
-                    .role("ROLE_USER")
+                    .password(passwordEncoder.encode(UUID.randomUUID().toString()))
                     .profileImgPath(profileImgPath != null ? profileImgPath : "/upload/profile/default.jpg")
                     .provider(registrationId)
                     .providerId(providerId)
                     .build();
 
             userMapper.insert(user);
+
+            Role role = roleMapper.findByRoleName("");
         }
 
         return PrincipalUser.builder()

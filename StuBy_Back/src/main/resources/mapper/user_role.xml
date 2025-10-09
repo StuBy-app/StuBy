@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.example.stuby_back.domain.userRole.UserRoleMapper">
+    <insert id="insert" useGeneratedKeys="true" keyProperty="userRoleId">
+        insert into user_role_tb
+        values (default, #{userId}, #{roleId})
+    </insert>
+    <delete id="deleteByUserId">
+        delete from user_role_tb
+        where
+            user_id = #{userId}
+    </delete>
+    <delete id="deleteByUserIds">
+        delete from user_role_tb
+        where
+            user_id in <foreach  item="userId" collection="userIds" separator="," open="(" close=")"> #{userId} </foreach>
+    </delete>
+</mapper>
