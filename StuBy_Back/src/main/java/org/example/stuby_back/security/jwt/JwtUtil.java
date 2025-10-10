@@ -36,7 +36,7 @@ public class JwtUtil {
                 .issuer("cheerful")
                 .expiration(new Date(new Date().getTime() + EXPIRED_TIME))
                 .claim("userId", user.getUserId())
-                .claim("authority", user.getRole())
+                .claim("authority", user.getUserRoles())
                 .signWith(KEY)
                 .compact();
     }
