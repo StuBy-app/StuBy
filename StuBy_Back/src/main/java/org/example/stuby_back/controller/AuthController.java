@@ -44,7 +44,7 @@ public class AuthController {
     public ResponseEntity<?> completeOauth(@AuthenticationPrincipal PrincipalUser principalUser,
                                            @RequestBody @Valid CompleteOauthDto dto) {
         if (principalUser == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseDto.fail(HttpStatus.valueOf("401"), "로그인 상태가 아닙니다."));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseDto.fail(HttpStatus.UNAUTHORIZED, "로그인 상태가 아닙니다."));
         }
         Integer userId = principalUser.getUser().getUserId();
         authService.completeOauthSignup(userId, dto);

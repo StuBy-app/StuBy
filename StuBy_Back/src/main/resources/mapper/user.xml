@@ -17,9 +17,9 @@
         <result property="profileImgPath" column="profile_img_path"/>
         <result property="provider" column="provider"/>
         <result property="providerId" column="provider_id"/>
-        <result property="isOauthOnly" column="is_oauth_only" jdbcType="TINYINT"/>
-        <result property="signupCompleted" column="signup_completed" jdbcType="TINYINT"/>
-        <result property="emailVerified" column="email_verified" jdbcType="TINYINT"/>
+        <result property="isOauthOnly" column="is_oauth_only"/>
+        <result property="signupCompleted" column="signup_completed"/>
+        <result property="emailVerified" column="email_verified"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
@@ -38,7 +38,6 @@
             gender = #{gender},
             school_id = #{schoolId},
             school_grade = #{schoolGrade},
-            profile_img_path = COALESCE(#{profileImgPath}, profile_img_path),
             signup_completed = 1,
             updated_at = NOW()
         WHERE user_id = #{userId}
@@ -51,6 +50,10 @@
             user_tb
         where
             username = #{username}
+    </select>
+
+    <select id="findByEmail" resultMap="UserMap">
+        SELECT * FROM user_tb WHERE email = #{email} LIMIT 1
     </select>
 
     <select id="findByUserId" resultMap="UserMap">
