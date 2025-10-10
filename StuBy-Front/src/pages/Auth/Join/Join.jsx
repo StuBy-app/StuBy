@@ -1,32 +1,44 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
+
+import { Button } from "../../../components/button";
+import { Input } from "../../../components/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../components/ui/select";
-import { registerUser } from "../../db";
+} from "../../../components/select";
 
-export const Join = (): JSX.Element => {  // 이게 뭔지 알아야 함. 
+import api from "../../../api/axios";
+
+export default function Join() {
   const navigate = useNavigate();
+
+  // 기본 폼 상태
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+
+  // 선택/조건부 상태 (TS 제네릭 제거, 문자열로 통일)
+  const [gender, setGender] = useState(""); // "male" | "female" | ""
+  const [affiliation, setAffiliation] = useState(""); // "중학생" | "고등학생" | "기타" | ""
   const [school, setSchool] = useState("");
-  const [passwordMismatch, setPasswordMismatch] = useState(false);
-  const [gender, setGender] = useState<"male" | "female" | null>(null);
-  const [affiliation, setAffiliation] = useState<string | null>(null);
-  const [grade, setGrade] = useState<string | null>(null);
+  const [grade, setGrade] = useState(""); // "grade1" | "grade2" | "grade3" | ""
+
   const [isGradeDisabled, setIsGradeDisabled] = useState(false);
   const [isSchoolDisabled, setIsSchoolDisabled] = useState(false);
-  const [formIncomplete, setFormIncomplete] = useState(false);
 
+  // UX 상태
+  const [formIncomplete, setFormIncomplete] = useState(false);
+  const [passwordMismatch, setPasswordMismatch] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  // 비밀번호 일치 검사
   useEffect(() => {
     if (password && confirmPassword && password !== confirmPassword) {
       setPasswordMismatch(true);
@@ -35,11 +47,12 @@ export const Join = (): JSX.Element => {  // 이게 뭔지 알아야 함.
     }
   }, [password, confirmPassword]);
 
+  // 소속이 '기타'면 학년/학교 비활성화
   useEffect(() => {
     if (affiliation === "기타") {
       setIsGradeDisabled(true);
-      setGrade(null);
       setIsSchoolDisabled(true);
+      setGrade("");
       setSchool("");
     } else {
       setIsGradeDisabled(false);
@@ -47,53 +60,54 @@ export const Join = (): JSX.Element => {  // 이게 뭔지 알아야 함.
     }
   }, [affiliation]);
 
-  const handleConfirm = () => {
-    setFormIncomplete(false); // 초기화
+  const handleConfirm = async () => {
+    if (submitting) return;
+    setFormIncomplete(false);
 
-    const requiredFields = [
-      username,
-      password,
-      confirmPassword,
-      name,
-      email,
-      gender,
-      affiliation,
-    ];
-
-    // '기타' 소속이 아닐 경우 학교와 학년도 필수
+    // 필수값 체크
+    const required = [username, password, confirmPassword, name, email, gender, affiliation];
     if (affiliation !== "기타") {
-      requiredFields.push(school);
-      requiredFields.push(grade);
+      required.push(school, grade);
     }
+    const allFilled = required.every((v) => v !== null && v !== "" && v !== "N/A");
 
-    const allFieldsFilled = requiredFields.every(field => field !== null && field !== "" && field !== "N/A");
-
-    if (!allFieldsFilled) {
+    if (!allFilled) {
       setFormIncomplete(true);
+      alert("모든 필수 정보를 입력해주세요.");
       return;
     }
-
     if (passwordMismatch) {
+      alert("비밀번호가 일치하지 않습니다.");
       return;
     }
 
-    const newUser = registerUser({
+    const payload = {
       username,
       password,
       name,
       email,
-      gender,
-      affiliation,
+      gender,                       // "male" | "female"
+      affiliation,                  // "중학생" | "고등학생" | "기타"
       school: affiliation === "기타" ? "" : school,
-      grade: affiliation === "기타" ? null : grade,
-      desiredUniversities: [], // 회원가입 시 희망 대학은 비어있음
-    });
+      grade: affiliation === "기타" ? null : grade, // 백엔드 스키마에 맞춰 null 전달
+      desiredUniversities: [],
+    };
 
-    if (newUser) {
+    try {
+      setSubmitting(true);
+      // 우리 axios 인스턴스로 호출 (baseURL + 인터셉터 적용됨)
+      await api.post("/api/auth/join", payload);
       alert("회원가입이 완료되었습니다!");
-      navigate("/u4357u4457u4352u4467u4363u4469u4523-u4363u4457u4357u4466");
-    } else {
-      alert("회원가입에 실패했습니다. 아이디 또는 이메일이 이미 존재합니다.");
+      navigate("/login"); // 회원가입 성공 시 로그인 페이지로 이동
+    } catch (err) {
+      // 에러 메시지 추출
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        "회원가입에 실패했습니다.";
+      alert(msg);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -139,6 +153,7 @@ export const Join = (): JSX.Element => {  // 이게 뭔지 알아야 함.
               className="w-full h-full border-0 bg-transparent rounded-[15px] px-4 text-xs [font-family:'Noto_Sans_KR',Helvetica] font-medium text-[#232323] placeholder:text-[#23232366] focus-visible:ring-0 focus-visible:ring-offset-0"
             />
           </div>
+
           {passwordMismatch && (
             <p className="text-[#ff6b6b] text-[10px] [font-family:'Noto_Sans_KR',Helvetica] mt-1 translate-y-[-1rem] animate-fade-in opacity-0 [--animation-delay:450ms]">
               비밀번호가 일치하지 않습니다.
@@ -152,6 +167,7 @@ export const Join = (): JSX.Element => {  // 이게 뭔지 알아야 함.
 
           <div className="flex gap-[7px] mt-[15px] w-80 translate-y-[-1rem] animate-fade-in opacity-0 [--animation-delay:500ms]">
             <Button
+              type="button"
               onClick={() => setGender("male")}
               className={`w-[155px] h-[45px] rounded-[15px] border-2 border-solid [font-family:'Noto_Sans_KR',Helvetica] font-medium text-xs transition-colors ${
                 gender === "male"
@@ -162,6 +178,7 @@ export const Join = (): JSX.Element => {  // 이게 뭔지 알아야 함.
               남성
             </Button>
             <Button
+              type="button"
               onClick={() => setGender("female")}
               className={`w-[155px] h-[45px] rounded-[15px] border-2 border-solid [font-family:'Noto_Sans_KR',Helvetica] font-medium text-xs transition-colors ${
                 gender === "female"
@@ -179,7 +196,7 @@ export const Join = (): JSX.Element => {  // 이게 뭔지 알아야 함.
               placeholder="성명"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full h-full border-0 bg-transparent rounded-[15px] px-4 text-xs [font-family:'Noto_Sans_KR',Helvetica] font-medium text-[#232323] placeholder:text-[#23232366] focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="w-full h-full border-0 bg-transparent rounded-[15px] px-4 text-xs [font-family:'Noto_SANS_KR',Helvetica] font-medium text-[#232323] placeholder:text-[#23232366] focus-visible:ring-0 focus-visible:ring-offset-0"
             />
           </div>
 
@@ -194,7 +211,7 @@ export const Join = (): JSX.Element => {  // 이게 뭔지 알아야 함.
           </div>
 
           <div className="w-80 bg-white rounded-[15px] border-2 border-solid border-[#628af9] h-[45px] mt-[15px] translate-y-[-1rem] animate-fade-in opacity-0 [--animation-delay:800ms]">
-            <Select value={affiliation || ""} onValueChange={setAffiliation}>
+            <Select value={affiliation} onValueChange={(v) => setAffiliation(v)}>
               <SelectTrigger className="w-full h-full border-0 bg-transparent rounded-[15px] px-4 text-xs [font-family:'Noto_Sans_KR',Helvetica] font-medium text-[#232323] focus:ring-0 focus:ring-offset-0">
                 <SelectValue placeholder="소속" className="text-[#232323]" />
               </SelectTrigger>
@@ -214,12 +231,17 @@ export const Join = (): JSX.Element => {  // 이게 뭔지 알아야 함.
                 value={school}
                 onChange={(e) => setSchool(e.target.value)}
                 disabled={isSchoolDisabled}
-                className={`w-full h-full border-0 bg-transparent rounded-[15px_0px_0px_15px] px-4 text-xs [font-family:'Noto_Sans_KR',Helvetica] font-medium text-[#232323] placeholder:text-[#23232366] focus-visible:ring-0 focus-visible:ring-offset-0 ${isSchoolDisabled ? "bg-gray-100 cursor-not-allowed" : ""}`}
+                className={`w-full h-full border-0 bg-transparent rounded-[15px_0px_0px_15px] px-4 text-xs [font-family:'Noto_Sans_KR',Helvetica] font-medium text-[#232323] placeholder:text-[#23232366] focus-visible:ring-0 focus-visible:ring-offset-0 ${
+                  isSchoolDisabled ? "bg-gray-100 cursor-not-allowed" : ""
+                }`}
               />
             </div>
-            <Button 
+            <Button
+              type="button"
               className={`w-[85px] h-[45px] rounded-[0px_15px_15px_0px] border-0 text-[#f8f9ff] [font-family:'Noto_Sans_KR',Helvetica] font-medium text-xs transition-colors ${
-                isSchoolDisabled ? "bg-[#a8c5f7] cursor-not-allowed" : "bg-[#628af9] hover:bg-[#628af9]/90"
+                isSchoolDisabled
+                  ? "bg-[#a8c5f7] cursor-not-allowed"
+                  : "bg-[#628af9] hover:bg-[#628af9]/90"
               }`}
               disabled={isSchoolDisabled}
             >
@@ -228,7 +250,7 @@ export const Join = (): JSX.Element => {  // 이게 뭔지 알아야 함.
           </div>
 
           <div className="w-80 bg-white rounded-[15px] border-2 border-solid border-[#628af9] h-[45px] mt-[15px] translate-y-[-1rem] animate-fade-in opacity-0 [--animation-delay:1000ms]">
-            <Select value={grade || ""} onValueChange={setGrade} disabled={isGradeDisabled}>
+            <Select value={grade} onValueChange={(v) => setGrade(v)} disabled={isGradeDisabled}>
               <SelectTrigger className="w-full h-full border-0 bg-transparent rounded-[15px] px-4 text-xs [font-family:'Noto_Sans_KR',Helvetica] font-medium text-[#232323] focus:ring-0 focus:ring-offset-0">
                 <SelectValue placeholder="학년" className="text-[#232323]" />
               </SelectTrigger>
@@ -240,14 +262,16 @@ export const Join = (): JSX.Element => {  // 이게 뭔지 알아야 함.
             </Select>
           </div>
 
-          <Button 
+          <Button
+            type="button"
             onClick={handleConfirm}
+            disabled={submitting}
             className="w-80 h-[45px] bg-[#628af9] rounded-[15px] border-0 text-[#f8f9ff] [font-family:'Noto_Sans_KR',Helvetica] font-medium text-xs hover:bg-[#628af9]/90 transition-colors mt-[35px] translate-y-[-1rem] animate-fade-in opacity-0 [--animation-delay:1100ms]"
           >
-            확인
+            {submitting ? "처리 중..." : "확인"}
           </Button>
         </div>
       </div>
     </div>
   );
-};
+}
