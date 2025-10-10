@@ -15,18 +15,34 @@
         <result property="email" column="email"/>
         <result property="gender" column="gender"/>
         <result property="profileImgPath" column="profile_img_path"/>
-        <result property="role" column="role"/>
         <result property="provider" column="provider"/>
         <result property="providerId" column="provider_id"/>
+        <result property="isOauthOnly" column="is_oauth_only" jdbcType="TINYINT"/>
+        <result property="signupCompleted" column="signup_completed" jdbcType="TINYINT"/>
+        <result property="emailVerified" column="email_verified" jdbcType="TINYINT"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="userId">
         insert into user_tb
-        values (default, #{username}, #{password}, #{schoolId}, #{schoolGrade}, #{name}, #{age},
-        #{email}, #{gender}, #{profileImgPath}, #{role}, #{provider}, #{providerId}, #{createdAt}, #{updatedAt})
+        values (default, #{username}, #{password}, #{schoolId}, #{schoolGrade}, #{name}, #{age}, #{email}, #{gender},
+        #{profileImgPath}, #{provider}, #{providerId}, #{isOauthOnly}, #{signupCompleted}, #{emailVerified}, now(), now())
     </insert>
+
+    <update id="updateForOauthCompletion" parameterType="org.example.stuby_back.domain.user.User">
+        UPDATE user_tb
+        SET
+            username = #{username},
+            name = #{name},
+            gender = #{gender},
+            school_id = #{schoolId},
+            school_grade = #{schoolGrade},
+            profile_img_path = COALESCE(#{profileImgPath}, profile_img_path),
+            signup_completed = 1,
+            updated_at = NOW()
+        WHERE user_id = #{userId}
+    </update>
 
     <select id="findByUsername" resultMap="UserMap">
         select
@@ -35,6 +51,14 @@
             user_tb
         where
             username = #{username}
+    </select>
+
+    <select id="findByUserId" resultMap="UserMap">
+        SELECT * FROM user_tb WHERE user_id = #{userId} LIMIT 1
+    </select>
+
+    <select id="findByProviderId" resultMap="UserMap">
+        SELECT * FROM user_tb WHERE provider_id = #{providerId} AND provider = #{provider} LIMIT 1
     </select>
 
 

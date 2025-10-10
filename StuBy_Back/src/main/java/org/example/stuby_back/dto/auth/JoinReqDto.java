@@ -27,7 +27,6 @@ public class JoinReqDto {
                 .gender(user.getGender())
                 .name(name)
                 .email(email)
-                .role(user.getRole())
                 .schoolId(0)
                 .schoolGrade(0)
                 .profileImgPath("/profile/default.jpg")
