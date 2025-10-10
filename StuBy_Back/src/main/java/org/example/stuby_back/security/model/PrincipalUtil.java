@@ -18,7 +18,7 @@ public class PrincipalUtil {
                 .userId(0)
                 .username("anonymous")
                 .name("anonymous")
-                .role("ROLE_ANONYMOUS")
+//                .role("ROLE_ANONYMOUS")
                 .build();
 
         ANONYMOUS = PrincipalUser.builder()
@@ -31,19 +31,7 @@ public class PrincipalUtil {
         현재 인증된 PrincipalUser 반환
      */
     public PrincipalUser getPrincipalUser() {
-
-//        return (PrincipalUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        var context = SecurityContextHolder.getContext();
-        var auth = context != null ? context.getAuthentication() : null;
-
-        if (auth == null) return ANONYMOUS;
-
-        Object principal = auth.getPrincipal();
-        if (principal instanceof PrincipalUser pu) {
-            return pu;
-        }
-        // anonymousUser(String) 등일 때
-        return ANONYMOUS;
+        return (PrincipalUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
 
 }

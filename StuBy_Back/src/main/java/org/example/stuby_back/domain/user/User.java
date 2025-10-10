@@ -26,9 +26,11 @@ public class User {
     private String email;
     private Integer gender;
     private String profileImgPath;
-    private String role;
     private String provider;
     private String providerId;
+    private Boolean isOauthOnly;
+    private Boolean signupCompleted;
+    private Boolean emailVerified;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

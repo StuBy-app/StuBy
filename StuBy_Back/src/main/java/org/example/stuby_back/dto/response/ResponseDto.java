@@ -11,11 +11,18 @@ public class ResponseDto <T> {
     private String message;
     private T body;
 
+    public ResponseDto(int value, String message) {
+    }
+
     public static <T> ResponseDto<T> success(T body) {
         return new ResponseDto<>(HttpStatus.OK.value(), "요청 성공", body);
     }
 
     public static <T> ResponseDto<T> fail(HttpStatus status, String message, T body) {
         return new ResponseDto<>(status.value(), message, body);
+    }
+
+    public static <T> ResponseDto<T> fail(HttpStatus status, String message) {
+        return new ResponseDto<>(status.value(), message);
     }
 }

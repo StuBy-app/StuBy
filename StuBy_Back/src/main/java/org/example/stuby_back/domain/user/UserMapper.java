@@ -7,8 +7,10 @@ import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface UserMapper {
     int insert(User user);
-    User findById(@Param("userId") Integer userId);
+    User findByUserId(@Param("userId") Integer userId);
     User findByProviderId(@Param("providerId") String providerId);
+
+    int updateForOauthCompletion(User user);
 
 //    List<User> findAllBySearchOption(UserSearchOption option);
 //    int getCountOfOptions(UserSearchOption option);

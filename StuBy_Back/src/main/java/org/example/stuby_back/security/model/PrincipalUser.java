@@ -3,6 +3,8 @@ package org.example.stuby_back.security.model;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
 import lombok.Builder;
 import lombok.Data;
 import org.example.stuby_back.domain.user.User;
@@ -20,12 +22,13 @@ public class PrincipalUser implements UserDetails, OAuth2User {
     private User user;
     private Map<String, Object> attributes;
 
-    private String profileImgUrl;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-
-        return List.of(new SimpleGrantedAuthority(user.getRole()));
+        return user.getUserRoles()
+                .stream()
+                .map(userRole -> new SimpleGrantedAuthority(userRole.getRole().getRoleName()))
+                .collect(Collectors.toList());
     }
 
     @Override
