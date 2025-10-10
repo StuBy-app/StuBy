@@ -7,6 +7,10 @@ import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface UserMapper {
     int insert(User user);
+    
+    // 아이디 중복 확인
+    User findByUsername(String username);
+    User findByEmail(@Param("email") String email);
     User findByUserId(@Param("userId") Integer userId);
     User findByProviderId(@Param("providerId") String providerId);
 
@@ -17,8 +21,6 @@ public interface UserMapper {
     int deleteByUserId(Integer userId);
     int deleteByUserIds(List<Integer> userIds);
 
-    // 아이디 중복 확인
-    User findByUsername(String username);
 
     // 회원삭제
     int deleteByUser(Integer userId);

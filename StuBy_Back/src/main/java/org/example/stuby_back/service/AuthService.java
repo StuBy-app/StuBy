@@ -38,9 +38,8 @@ public class AuthService {
         // 유효성 검사 (Login ID 중복 확인)
         User foundUser = userMapper.findByUsername(dto.getUsername());
         if (foundUser != null) {
-            BindingResult bindingResult = new BeanPropertyBindingResult(foundUser, "");
-            FieldError fieldError = new FieldError("username", "username", "이미 존재하는 아이디입니다.");
-            bindingResult.addError(fieldError);
+            BindingResult bindingResult = new BeanPropertyBindingResult(dto, "joinReqDto");
+            bindingResult.addError(new FieldError("joinReqDto", "username", "이미 존재하는 아이디입니다."));
             throw new BindException(bindingResult);
         }
 
