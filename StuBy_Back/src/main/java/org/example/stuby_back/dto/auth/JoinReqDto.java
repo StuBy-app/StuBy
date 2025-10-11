@@ -8,8 +8,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 @Data
 public class JoinReqDto {
 
-    // ❌ private final User user;  제거
-
     @Pattern(regexp = "^(?=.*[a-z])(?=.*\\d).{4,20}$",
             message = "아이디는 영문, 숫자를 포함 4~20자여야 합니다.")
     private String username;
@@ -35,19 +33,13 @@ public class JoinReqDto {
     private Integer age;
 
     public User toUser(BCryptPasswordEncoder encoder) {
-        Integer genderCode = null; // DB가 TINYINT면 숫자로 변환
-        if (gender != null) {
-            String g = gender.toLowerCase();
-            if (g.equals("male") || g.equals("남성")) genderCode = 1;
-            else if (g.equals("female") || g.equals("여성")) genderCode = 2;
-        }
 
         return User.builder()
                 .username(username)
                 .password(encoder.encode(password))
                 .name(name)
                 .email(email)
-                .gender(genderCode)                  // ← 문자열 → 숫자 매핑
+                .gender(gender)                  // ← 문자열 → 숫자 매핑
                 .schoolId(schoolId)                  // null 가능
                 .schoolGrade(schoolGrade)            // null 가능
                 .age(age)                            // null 가능

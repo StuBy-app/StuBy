@@ -31,16 +31,29 @@
     </insert>
 
     <update id="updateForOauthCompletion" parameterType="org.example.stuby_back.domain.user.User">
-        UPDATE user_tb
-        SET
+        update user_tb
+        set
             username = #{username},
             name = #{name},
+            age = #{age},
             gender = #{gender},
             school_id = #{schoolId},
             school_grade = #{schoolGrade},
             signup_completed = 1,
-            updated_at = NOW()
-        WHERE user_id = #{userId}
+            updated_at = now()
+        where
+            user_id = #{userId}
+    </update>
+
+    <update id="update">
+        update user_tb
+        set
+            school_id = #{schoolId},
+            school_grade = #{schoolGrade},
+            age = #{age},
+            updated_at = now()
+        where
+            user_id = #{userId}
     </update>
 
     <select id="findByUsername" resultMap="UserMap">
@@ -53,15 +66,15 @@
     </select>
 
     <select id="findByEmail" resultMap="UserMap">
-        SELECT * FROM user_tb WHERE email = #{email} LIMIT 1
+        select * from user_tb where email = #{email} limit 1
     </select>
 
     <select id="findByUserId" resultMap="UserMap">
-        SELECT * FROM user_tb WHERE user_id = #{userId} LIMIT 1
+        select * from user_tb where user_id = #{userId} limit 1
     </select>
 
     <select id="findByProviderId" resultMap="UserMap">
-        SELECT * FROM user_tb WHERE provider_id = #{providerId} AND provider = #{provider} LIMIT 1
+        select * from user_tb where provider_id = #{providerId} and provider = #{provider} limit 1
     </select>
 
 

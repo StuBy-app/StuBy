@@ -6,6 +6,7 @@ import org.example.stuby_back.dto.score.LatestExamDto;
 import org.example.stuby_back.service.MyPageService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -25,6 +26,16 @@ public class MyPageController {
         };
 
         return ResponseEntity.ok(ResponseDto.success(latest));
+    }
+
+    @PostMapping("/profile")
+    public ResponseEntity<ResponseDto<?>> updateProfile() {
+        return ResponseEntity.ok(ResponseDto.success(null));
+    }
+
+    @PostMapping("/profile/password")
+    public ResponseEntity<ResponseDto<?>> changePassword() {
+        return ResponseEntity.ok(ResponseDto.success(null));
     }
 
 }
