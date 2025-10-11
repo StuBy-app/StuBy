@@ -64,7 +64,8 @@ public class SecurityConfig {
             auth.requestMatchers("/", "/login/oauth2/**", "/oauth2/**", "/image/**", "/upload/**", "/api/auth/login", "/api/auth/join", "/api/account/principal").permitAll();
 
             auth.requestMatchers("/api/auth/complete-oauth").authenticated()
-                    .requestMatchers("/api/account/**").authenticated();
+                    .requestMatchers("/api/account/**").authenticated()
+                    .requestMatchers("/api/mypage/**").authenticated();
 
             // 관리자 전용
             auth.requestMatchers("/api/admin/**").hasRole("ADMIN");

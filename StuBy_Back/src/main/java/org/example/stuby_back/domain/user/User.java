@@ -24,7 +24,7 @@ public class User {
     private String name;
     private Integer age;
     private String email;
-    private Integer gender;
+    private String gender;
     private String profileImgPath;
     private String provider;
     private String providerId;

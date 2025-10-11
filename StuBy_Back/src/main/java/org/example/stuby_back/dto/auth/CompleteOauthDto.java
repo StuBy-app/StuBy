@@ -17,7 +17,7 @@ public class CompleteOauthDto {
     private String name;
 
     @NotNull(message = "gender는 필수입니다.")
-    private Integer gender;
+    private String gender;
 
     // 프론트가 roleId(소속)를 보낼 것이라 가정
     @NotNull(message = "role는 필수입니다.")

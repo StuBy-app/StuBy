@@ -26,7 +26,8 @@ public interface UserMapper {
     int deleteByUser(Integer userId);
 
     // 프로필 수정
-    int updateName(Integer userId, String name);
+    int update(User user);
+    String updatePassword(@Param("oldPassword") String oldPassword, @Param("newPassword") String newPassword);
     String getProfileImgPath(Integer userId);
     int updateProfileImgPath(Integer userId, @Param("profileImg") String profileImgPath);
 }
