@@ -1,56 +1,30 @@
 import { ChevronLeftIcon, PlusIcon, XIcon } from "lucide-react";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "../../components/ui/button";
-import { Card, CardContent } from "../../components/ui/card";
-import { Input } from "../../components/ui/input";
+import { Button } from "../../components/button";
+import { Card, CardContent } from "../../components/card";
+import { Input } from "../../components/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../components/ui/select";
+} from "../../components/select";
 import { getCurrentUser, saveMockGrade, saveSchoolGrade } from "../../db";
 
-type ExamType = "mock" | "school";
-type MockMonth = "3월" | "6월" | "9월" | "11월";
-type KoreanSubject = "화법과 작문" | "언어와 매체";
-type MathSubject = "확률과 통계" | "미적분" | "기하";
-type ElectiveSubject =
-  | "생활과 윤리"
-  | "윤리와 사상"
-  | "한국지리"
-  | "세계지리"
-  | "동아시아사"
-  | "세계사"
-  | "정치와 법"
-  | "경제"
-  | "사회·문화"
-  | "물리학Ⅰ"
-  | "화학Ⅰ"
-  | "생명과학Ⅰ"
-  | "지구과학Ⅰ"
-  | "물리학Ⅱ"
-  | "화학Ⅱ"
-  | "생명과학Ⅱ"
-  | "지구과학Ⅱ";
-
-interface CustomSubject {
-  id: number;
-  name: string;
-  score: string;
-}
-
-export const GradeInput = (): JSX.Element => {
+export const GradeInput = () => {
   const navigate = useNavigate();
-  const [examType, setExamType] = useState<ExamType>("mock");
-  const [mockMonth, setMockMonth] = useState<MockMonth>("3월");
-  const [koreanSubject, setKoreanSubject] = useState<KoreanSubject>("화법과 작문");
-  const [mathSubject, setMathSubject] = useState<MathSubject>("확률과 통계");
-  const [elective1, setElective1] = useState<ElectiveSubject>("생활과 윤리");
-  const [elective2, setElective2] = useState<ElectiveSubject>("물리학Ⅰ");
 
+  // exam type & selects
+  const [examType, setExamType] = useState("mock"); // "mock" | "school"
+  const [mockMonth, setMockMonth] = useState("3월"); // "3월" | "6월" | "9월" | "11월"
+  const [koreanSubject, setKoreanSubject] = useState("화법과 작문"); // "화법과 작문" | "언어와 매체"
+  const [mathSubject, setMathSubject] = useState("확률과 통계"); // "확률과 통계" | "미적분" | "기하"
+  const [elective1, setElective1] = useState("생활과 윤리");
+  const [elective2, setElective2] = useState("물리학Ⅰ");
+
+  // scores
   const [scores, setScores] = useState({
     korean1: "",
     korean2: "",
@@ -68,14 +42,15 @@ export const GradeInput = (): JSX.Element => {
     math: "",
   });
 
-  const [customSubjects, setCustomSubjects] = useState<CustomSubject[]>([]);
+  // custom subjects for school exam
+  const [customSubjects, setCustomSubjects] = useState([]);
   const [nextId, setNextId] = useState(1);
 
   const handleBackClick = () => {
-    navigate("/u4358u4449u4363u4469u4369u4454u4363u4469u4364u4469");
+    navigate("/mypage");
   };
 
-  const handleScoreChange = (field: string, value: string) => {
+  const handleScoreChange = (field, value) => {
     if (examType === "mock") {
       setScores((prev) => ({ ...prev, [field]: value }));
     } else {
@@ -84,23 +59,21 @@ export const GradeInput = (): JSX.Element => {
   };
 
   const addCustomSubject = () => {
-    setCustomSubjects([...customSubjects, { id: nextId, name: "", score: "" }]);
-    setNextId(nextId + 1);
+    setCustomSubjects((prev) => [...prev, { id: nextId, name: "", score: "" }]);
+    setNextId((n) => n + 1);
   };
 
-  const removeCustomSubject = (id: number) => {
-    setCustomSubjects(customSubjects.filter((subject) => subject.id !== id));
+  const removeCustomSubject = (id) => {
+    setCustomSubjects((prev) => prev.filter((s) => s.id !== id));
   };
 
-  const updateCustomSubject = (id: number, field: "name" | "score", value: string) => {
-    setCustomSubjects(
-      customSubjects.map((subject) =>
-        subject.id === id ? { ...subject, [field]: value } : subject
-      )
+  const updateCustomSubject = (id, field, value) => {
+    setCustomSubjects((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, [field]: value } : s))
     );
   };
 
-  const electiveSubjects: ElectiveSubject[] = [
+  const electiveSubjects = [
     "생활과 윤리",
     "윤리와 사상",
     "한국지리",
@@ -128,7 +101,10 @@ export const GradeInput = (): JSX.Element => {
     }
 
     if (examType === "mock") {
-      const total = Object.values(scores).reduce((sum, score) => sum + (Number(score) || 0), 0);
+      const total = Object.values(scores).reduce(
+        (sum, v) => sum + (Number(v) || 0),
+        0
+      );
       saveMockGrade(currentUser.id, {
         month: mockMonth,
         korean1: Number(scores.korean1) || 0,
@@ -142,21 +118,31 @@ export const GradeInput = (): JSX.Element => {
         total,
       });
     } else {
-      const baseTotal = (Number(schoolScores.korean) || 0) + (Number(schoolScores.english) || 0) + (Number(schoolScores.math) || 0);
-      const customTotal = customSubjects.reduce((sum, sub) => sum + (Number(sub.score) || 0), 0);
+      const baseTotal =
+        (Number(schoolScores.korean) || 0) +
+        (Number(schoolScores.english) || 0) +
+        (Number(schoolScores.math) || 0);
+      const customTotal = customSubjects.reduce(
+        (sum, s) => sum + (Number(s.score) || 0),
+        0
+      );
       const total = baseTotal + customTotal;
 
       saveSchoolGrade(currentUser.id, {
-        semester: "새 학기 시험", // 실제로는 학기 선택 필드가 필요
+        semester: "새 학기 시험", // TODO: 학기 선택 필드 추가 시 교체
         korean: Number(schoolScores.korean) || 0,
         english: Number(schoolScores.english) || 0,
         math: Number(schoolScores.math) || 0,
-        customSubjects: customSubjects.map(sub => ({ name: sub.name, score: Number(sub.score) || 0 })),
+        customSubjects: customSubjects.map((s) => ({
+          name: s.name,
+          score: Number(s.score) || 0,
+        })),
         total,
       });
     }
+
     alert("성적이 성공적으로 저장되었습니다!");
-    navigate("/u4358u4449u4363u4469u4369u4454u4363u4469u4364u4469"); // 마이페이지로 이동
+    navigate("/mypage");
   };
 
   return (
@@ -208,7 +194,7 @@ export const GradeInput = (): JSX.Element => {
           {examType === "mock" ? (
             <>
               <div className="flex gap-2 mb-5">
-                {(["3월", "6월", "9월", "11월"] as MockMonth[]).map((month) => (
+                {["3월", "6월", "9월", "11월"].map((month) => (
                   <Button
                     key={month}
                     onClick={() => setMockMonth(month)}
@@ -243,7 +229,7 @@ export const GradeInput = (): JSX.Element => {
                         />
                       </div>
                       <div className="flex items-center gap-2">
-                        <Select value={koreanSubject} onValueChange={(value) => setKoreanSubject(value as KoreanSubject)}>
+                        <Select value={koreanSubject} onValueChange={(value) => setKoreanSubject(value)}>
                           <SelectTrigger className="w-[100px] h-[35px] text-[10px] [font-family:'Noto_Sans_KR',Helvetica] border-[#628af9]">
                             <SelectValue />
                           </SelectTrigger>
@@ -298,7 +284,7 @@ export const GradeInput = (): JSX.Element => {
                         />
                       </div>
                       <div className="flex items-center gap-2">
-                        <Select value={mathSubject} onValueChange={(value) => setMathSubject(value as MathSubject)}>
+                        <Select value={mathSubject} onValueChange={(value) => setMathSubject(value)}>
                           <SelectTrigger className="w-[100px] h-[35px] text-[10px] [font-family:'Noto_Sans_KR',Helvetica] border-[#628af9]">
                             <SelectValue />
                           </SelectTrigger>
@@ -327,17 +313,17 @@ export const GradeInput = (): JSX.Element => {
                     </h3>
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center gap-2">
-                        <Select value={elective1} onValueChange={(value) => setElective1(value as ElectiveSubject)}>
+                        <Select value={elective1} onValueChange={(value) => setElective1(value)}>
                           <SelectTrigger className="w-[140px] h-[35px] text-[10px] [font-family:'Noto_Sans_KR',Helvetica] border-[#628af9]">
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
-                            {electiveSubjects.map((subject) => (
-                              <SelectItem key={subject} value={subject}>
-                                {subject}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
+                        <SelectContent>
+                          {electiveSubjects.map((subject) => (
+                            <SelectItem key={subject} value={subject}>
+                              {subject}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
                         </Select>
                         <Input
                           type="number"
@@ -348,7 +334,7 @@ export const GradeInput = (): JSX.Element => {
                         />
                       </div>
                       <div className="flex items-center gap-2">
-                        <Select value={elective2} onValueChange={(value) => setElective2(value as ElectiveSubject)}>
+                        <Select value={elective2} onValueChange={(value) => setElective2(value)}>
                           <SelectTrigger className="w-[140px] h-[35px] text-[10px] [font-family:'Noto_Sans_KR',Helvetica] border-[#628af9]">
                             <SelectValue />
                           </SelectTrigger>
@@ -489,3 +475,5 @@ export const GradeInput = (): JSX.Element => {
     </div>
   );
 };
+
+export default GradeInput;

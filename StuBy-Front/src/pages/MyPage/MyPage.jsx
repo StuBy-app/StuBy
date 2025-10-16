@@ -1,3 +1,4 @@
+// MyPage.jsx
 import {
   CalendarIcon,
   ChevronLeftIcon,
@@ -12,97 +13,64 @@ import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "../../components/ui/avatar";
-import { Button } from "../../components/ui/button";
-import { Card, CardContent } from "../../components/ui/card";
-import { Separator } from "../../components/ui/separator";
-import { getCurrentUser, getMockGrades } from "../../db"; // DB에서 현재 사용자 정보 가져오기
+} from "../../components/avatar";
+import { Button } from "../../components/button";
+import { Card, CardContent } from "../../components/card";
+import { Separator } from "../../components/separator";
+import api from "../../api/axios"; 
 
 const navigationItems = [
-  {
-    icon: CalendarIcon,
-    label: "캘린더",
-    leftIcon: "left-[50px]",
-    leftLabel: "left-[50px]",
-  },
-  {
-    icon: ClockIcon,
-    label: "공부시간",
-    leftIcon: "left-[138px]",
-    leftLabel: "left-[133px]",
-  },
-  {
-    icon: HomeIcon,
-    label: "홈",
-    leftIcon: "left-[226px]",
-    leftLabel: "left-[235px]",
-    active: true,
-  },
-  {
-    icon: PieChartIcon,
-    label: "정보",
-    leftIcon: "left-[314px]",
-    leftLabel: "left-[319px]",
-  },
-  {
-    icon: MessageCircleIcon,
-    label: "AI 버디",
-    leftIcon: "left-[402px]",
-    leftLabel: "left-[402px]",
-  },
+  { icon: CalendarIcon, label: "캘린더", leftIcon: "left-[50px]", leftLabel: "left-[50px]" },
+  { icon: ClockIcon, label: "공부시간", leftIcon: "left-[138px]", leftLabel: "left-[133px]" },
+  { icon: HomeIcon, label: "홈", leftIcon: "left-[226px]", leftLabel: "left-[235px]", active: true },
+  { icon: PieChartIcon, label: "정보", leftIcon: "left-[314px]", leftLabel: "left-[319px]" },
+  { icon: MessageCircleIcon, label: "AI 버디", leftIcon: "left-[402px]", leftLabel: "left-[402px]" },
 ];
 
-export const MyPage = (): JSX.Element => {
+export const MyPage = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState(getCurrentUser()); // 현재 로그인된 사용자 정보
-  const [latestMockGrade, setLatestMockGrade] = useState<any>(null);
+  const [user, setUser] = useState(null);
+  const [latestMockGrade, setLatestMockGrade] = useState(null); // 필요 시 서버 연동
 
+  // ✅ 현재 사용자 정보 가져오기 (axios)
   useEffect(() => {
-    const fetchUserDataAndGrades = () => {
-      const currentUser = getCurrentUser();
-      setUser(currentUser);
+    let mounted = true;
 
-      if (currentUser) {
-        const mockGrades = getMockGrades(currentUser.id);
-        if (mockGrades.length > 0) {
-          setLatestMockGrade(mockGrades[mockGrades.length - 1]);
-        } else {
-          setLatestMockGrade(null);
+    const fetchProfile = async () => {
+      try {
+        const { data } = await api.get("/api/users/profile");
+        if (!mounted) return;
+        setUser(data);
+
+        // TODO: 성적 데이터를 서버에서 가져오면 여기서 같이 호출
+        // const grades = await api.get(`/api/grades?userId=${data.id}`);
+        // setLatestMockGrade(grades.data.at(-1) ?? null);
+      } catch (err) {
+        // 401/403 등 인증 이슈 → 로그인 페이지로
+        if (err?.response?.status === 401 || err?.response?.status === 403) {
+          navigate("/login", { replace: true });
+          return;
         }
+        console.error("프로필 조회 실패:", err);
       }
     };
 
-    fetchUserDataAndGrades();
-    // 마이페이지 수정 후 돌아왔을 때 데이터를 다시 불러오기 위해
-    // 라우터 상태 변경을 감지하는 방법이 필요하지만, 여기서는 간단히 페이지 로드 시점에만 처리
-    // 실제 앱에서는 Context API나 전역 상태 관리 라이브러리를 통해 사용자 정보를 관리하는 것이 효율적입니다.
-  }, [navigate]); // navigate가 변경될 때 (즉, 페이지 이동 후) 다시 불러오도록 설정
+    fetchProfile();
+    return () => {
+      mounted = false;
+    };
+  }, [navigate]);
 
   const handleEditProfile = () => {
-    navigate("/u4358u4449u4363u4469u4369u4454u4363u4469u4364u4469u45u4370u4460u4363u4463u4523u4361u4462u4364u4453u4540");
+    navigate("/mypagemodify");
   };
+  const handleBackClick = () => navigate("/home");
+  const handleFollowingClick = () => navigate("/following");
+  const handleFollowerClick = () => navigate("/follower");
+  const handleGradeInputClick = () => navigate("/grade/input");
+  const handleGradeViewClick = () => navigate("/grade/view");
 
-  const handleBackClick = () => {
-    navigate("/u4370u4457u4535");
-  };
-
-  const handleFollowingClick = () => {
-    navigate("/u4369u4449u4527u4357u4457u4363u4469u4540");
-  };
-
-  const handleFollowerClick = () => {
-    navigate("/u4369u4449u4527u4357u4457u4363u4463");
-  };
-
-  const handleGradeInputClick = () => {
-    navigate("/u4370u4453u4364u4461u45u4352u4469u4363u4469u4536");
-  };
-
-  const handleGradeViewClick = () => {
-    navigate("/u4370u4453u4364u4461u45u4357u4449u4352u4469");
-  };
-
-  const getSubjectScore = (subjectName: string) => {
+  const getSubjectScore = (subjectName) => {
     if (!latestMockGrade) return "0점";
     switch (subjectName) {
       case "국어":
@@ -111,7 +79,7 @@ export const MyPage = (): JSX.Element => {
         return `${latestMockGrade.english}점`;
       case "수학":
         return `${latestMockGrade.math1 + latestMockGrade.math2}점`;
-      case "통합사회": // 모의고사에는 통합사회/과학이 없으므로 임시로 선택과목1/2로 대체
+      case "통합사회":
         return `${latestMockGrade.elective1}점`;
       case "통합과학":
         return `${latestMockGrade.elective2}점`;
@@ -131,37 +99,12 @@ export const MyPage = (): JSX.Element => {
     { name: "한국사", score: getSubjectScore("한국사"), leftClass: "left-[359px]" },
   ];
 
-  const subjectNamePositions = [
-    "left-[35px]",
-    "left-[89px]",
-    "left-[143px]",
-    "left-[199px]",
-    "left-[279px]",
-    "left-[359px]",
-  ];
-
-  const subjectScorePositions = [
-    "left-9",
-    "left-[90px]",
-    "left-36",
-    "left-[210px]",
-    "left-[290px]",
-    "left-[365px]",
-  ];
-
-  const separatorPositions = [
-    "left-[74px]",
-    "left-32",
-    "left-[183px]",
-    "left-[263px]",
-    "left-[343px]",
-  ];
+  const subjectNamePositions = ["left-[35px]","left-[89px]","left-[143px]","left-[199px]","left-[279px]","left-[359px]"];
+  const subjectScorePositions = ["left-9","left-[90px]","left-36","left-[210px]","left-[290px]","left-[365px]"];
+  const separatorPositions = ["left-[74px]","left-32","left-[183px]","left-[263px]","left-[343px]"];
 
   return (
-    <div
-      className="bg-[#000] w-full min-h-screen flex items-center justify-center"
-      data-model-id="24:140"
-    >
+    <div className="bg-[#000] w-full min-h-screen flex items-center justify-center" data-model-id="24:140">
       <main className="h-screen w-[480px] relative bg-[#f8f9ff] flex flex-col">
         <header className="absolute top-0 left-0 w-[480px] h-[76px] z-10">
           <div className="absolute top-0 left-0 w-[480px] h-[76px] flex items-end bg-[#f8f9ff] shadow-[0px_2px_2px_#2323231a]">
@@ -184,10 +127,7 @@ export const MyPage = (): JSX.Element => {
           <section className="flex flex-col items-center w-full max-w-[430px]">
             <div className="flex flex-col items-center">
               <Avatar className="h-20 w-20">
-                <AvatarImage
-                  src="https://c.animaapp.com/mghllw7nnesCnv/img/ellipse-9-1.png"
-                  alt="유저이름"
-                />
+                <AvatarImage src="https://c.animaapp.com/mghllw7nnesCnv/img/ellipse-9-1.png" alt="유저이름" />
                 <AvatarFallback>유저</AvatarFallback>
               </Avatar>
 
@@ -204,21 +144,12 @@ export const MyPage = (): JSX.Element => {
               </p>
 
               <div className="mt-[3px] flex items-center gap-2">
-                <button
-                  onClick={handleFollowingClick}
-                  className="[font-family:'Noto_Sans_KR',Helvetica] font-medium text-[#232323] text-xs tracking-[0] leading-4 cursor-pointer"
-                >
-                  팔로잉 <span className="text-[#23232366]">23명</span>
+                <button onClick={handleFollowingClick} className="[font-family:'Noto_Sans_KR',Helvetica] font-medium text-[#232323] text-xs tracking-[0] leading-4 cursor-pointer">
+                  팔로잉 <span className="text-[#23232366]">7명</span>
                 </button>
-                <Separator
-                  orientation="vertical"
-                  className="h-2.5 bg-[#232323]"
-                />
-                <button
-                  onClick={handleFollowerClick}
-                  className="[font-family:'Noto_Sans_KR',Helvetica] font-medium text-[#232323] text-xs tracking-[0] leading-4 cursor-pointer"
-                >
-                  팔로워 <span className="text-[#23232366]">23명</span>
+                <Separator orientation="vertical" className="h-2.5 bg-[#232323]" />
+                <button onClick={handleFollowerClick} className="[font-family:'Noto_Sans_KR',Helvetica] font-medium text-[#232323] text-xs tracking-[0] leading-4 cursor-pointer">
+                  팔로워 <span className="text-[#23232366]">5명</span>
                 </button>
               </div>
             </div>
@@ -226,10 +157,7 @@ export const MyPage = (): JSX.Element => {
             <Card className="w-full mt-[25px] bg-[#628af9] border-0 rounded-[10px] translate-y-[-1rem] animate-fade-in opacity-0 [--animation-delay:200ms]">
               <CardContent className="p-0 relative h-[70px]">
                 {subjects.map((subject, index) => (
-                  <div
-                    key={index}
-                    className={`absolute top-[19px] ${subjectNamePositions[index]}`}
-                  >
+                  <div key={index} className={`absolute top-[19px] ${subjectNamePositions[index]}`}>
                     <span className="text-[13px] [font-family:'Noto_Sans_KR',Helvetica] font-medium text-[#f8f9ff] tracking-[0] leading-4 whitespace-nowrap">
                       {subject.name}
                     </span>
@@ -237,18 +165,11 @@ export const MyPage = (): JSX.Element => {
                 ))}
 
                 {separatorPositions.map((position, index) => (
-                  <Separator
-                    key={index}
-                    orientation="vertical"
-                    className={`absolute top-[15px] ${position} h-10 bg-[#f8f9ff] opacity-50`}
-                  />
+                  <Separator key={index} orientation="vertical" className={`absolute top-[15px] ${position} h-10 bg-[#f8f9ff] opacity-50`} />
                 ))}
 
                 {subjects.map((subject, index) => (
-                  <div
-                    key={index}
-                    className={`absolute top-[35px] ${subjectScorePositions[index]}`}
-                  >
+                  <div key={index} className={`absolute top-[35px] ${subjectScorePositions[index]}`}>
                     <span className="text-[10px] [font-family:'Noto_Sans_KR',Helvetica] font-medium text-[#f8f9ff] tracking-[0] leading-4 whitespace-nowrap">
                       {subject.score}
                     </span>
@@ -284,10 +205,7 @@ export const MyPage = (): JSX.Element => {
                   {user?.gender === "male" ? "남성" : user?.gender === "female" ? "여성" : "미지정"}
                 </div>
 
-                <button 
-                  onClick={handleEditProfile}
-                  className="absolute top-[133px] left-[35px] [font-family:'Noto_Sans_KR',Helvetica] font-medium text-[#232323] text-sm tracking-[0] leading-4 hover:text-[#628af9] transition-colors"
-                >
+                <button onClick={handleEditProfile} className="absolute top-[133px] left-[35px] [font-family:'Noto_Sans_KR',Helvetica] font-medium text-[#232323] text-sm tracking-[0] leading-4 hover:text-[#628af9] transition-colors">
                   내 정보 수정
                 </button>
               </CardContent>
@@ -299,17 +217,11 @@ export const MyPage = (): JSX.Element => {
                   성적
                 </div>
 
-                <button 
-                  onClick={handleGradeInputClick}
-                  className="absolute top-14 left-[35px] [font-family:'Noto_Sans_KR',Helvetica] font-medium text-[#232323] text-sm tracking-[0] leading-4 hover:text-[#628af9] transition-colors"
-                >
+                <button onClick={handleGradeInputClick} className="absolute top-14 left-[35px] [font-family:'Noto_Sans_KR',Helvetica] font-medium text-[#232323] text-sm tracking-[0] leading-4 hover:text-[#628af9] transition-colors">
                   성적 기입
                 </button>
 
-                <button 
-                  onClick={handleGradeViewClick}
-                  className="absolute top-[82px] left-[35px] [font-family:'Noto_Sans_KR',Helvetica] font-medium text-[#232323] text-sm tracking-[0] leading-4 hover:text-[#628af9] transition-colors"
-                >
+                <button onClick={handleGradeViewClick} className="absolute top-[82px] left-[35px] [font-family:'Noto_Sans_KR',Helvetica] font-medium text-[#232323] text-sm tracking-[0] leading-4 hover:text-[#628af9] transition-colors">
                   내 모든 성적 보기
                 </button>
               </CardContent>
@@ -330,28 +242,19 @@ export const MyPage = (): JSX.Element => {
               <button
                 key={index}
                 className="absolute top-3"
-                style={{
-                  left: item.leftIcon.replace("left-[", "").replace("]", ""),
-                }}
+                style={{ left: item.leftIcon.replace("left-[", "").replace("]", "") }}
               >
-                <Icon
-                  className={`w-7 h-7 ${
-                    item.active ? "text-[#628af9]" : "text-[#2323234c]"
-                  }`}
-                />
-                <span
-                  className={`absolute top-[33px] left-1/2 -translate-x-1/2 [font-family:'Noto_Sans_KR',Helvetica] font-bold text-[10px] tracking-[0] leading-[normal] whitespace-nowrap ${
-                    item.active ? "text-[#628af9]" : "text-[#2323234c]"
-                  }`}
-                >
+                <Icon className={`w-7 h-7 ${item.active ? "text-[#628af9]" : "text-[#2323234c]"}`} />
+                <span className={`absolute top-[33px] left-1/2 -translate-x-1/2 [font-family:'Noto_Sans_KR',Helvetica] font-bold text-[10px] tracking-[0] leading-[normal] whitespace-nowrap ${item.active ? "text-[#628af9]" : "text-[#2323234c]"}`}>
                   {item.label}
                 </span>
               </button>
             );
           })}
         </nav>
-
       </main>
     </div>
   );
 };
+
+export default MyPage;

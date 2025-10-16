@@ -8,11 +8,11 @@ import {
   SearchIcon,
   TrashIcon,
 } from "lucide-react";
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "../../components/ui/button";
-import { Card, CardContent } from "../../components/ui/card";
-import { Input } from "../../components/ui/input";
+import { Button } from "../../components/button";
+import { Card, CardContent } from "../../components/card";
+import { Input } from "../../components/input";
 
 const subjects = [
   { name: "국어", myScore: 90, schoolAvg: 75, nationalAvg: 70 },
@@ -31,96 +31,72 @@ const navItems = [
   { icon: MessageCircleIcon, label: "AI 버디", active: false },
 ];
 
-export const Home = (): JSX.Element => {
+export const Home = () => {
   const navigate = useNavigate();
   const [tasks, setTasks] = useState([
-    {
-      id: 1,
-      subject: "수학",
-      description: "미적분까지 복습하기",
-      completed: false,
-    },
+    { id: 1, subject: "수학", description: "미적분까지 복습하기", completed: false },
     { id: 2, subject: "과목", description: "복습할 내용 작성", completed: false },
   ]);
   const [showAddInput, setShowAddInput] = useState(false);
   const [newTaskSubject, setNewTaskSubject] = useState("");
   const [newTaskDescription, setNewTaskDescription] = useState("");
-  const [swipedTaskId, setSwipedTaskId] = useState<number | null>(null);
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [swipedTaskId, setSwipedTaskId] = useState(null);
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
 
   const handleProfileClick = () => {
-    navigate("/u4358u4449u4363u4469u4369u4454u4363u4469u4364u4469");
+    navigate("/mypage");
   };
 
-  const toggleTaskCompletion = (taskId: number) => {
+  const toggleTaskCompletion = (taskId) => {
     setTasks((prevTasks) => {
-      const updatedTasks = prevTasks.map((task) =>
-        task.id === taskId ? { ...task, completed: !task.completed } : task
+      const updated = prevTasks.map((t) =>
+        t.id === taskId ? { ...t, completed: !t.completed } : t
       );
-      
-      const incompleteTasks = updatedTasks.filter((task) => !task.completed);
-      const completedTasks = updatedTasks.filter((task) => task.completed);
-      
-      return [...incompleteTasks, ...completedTasks];
+      const incomplete = updated.filter((t) => !t.completed);
+      const completed = updated.filter((t) => t.completed);
+      return [...incomplete, ...completed];
     });
   };
 
-  const deleteTask = (taskId: number) => {
-    setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
+  const deleteTask = (taskId) => {
+    setTasks((prev) => prev.filter((t) => t.id !== taskId));
     setSwipedTaskId(null);
   };
 
-  const handleTouchStart = (e: React.TouchEvent) => {
+  const handleTouchStart = (e) => {
     setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
   };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
+  const handleTouchMove = (e) => {
     setTouchEnd(e.targetTouches[0].clientX);
   };
-
-  const handleTouchEnd = (taskId: number) => {
-    if (!touchStart || !touchEnd) return;
-    
+  const handleTouchEnd = (taskId) => {
+    if (touchStart === null || touchEnd === null) return;
     const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > 50;
-    const isRightSwipe = distance < -50;
-    
-    if (isLeftSwipe) {
-      setSwipedTaskId(taskId);
-    } else if (isRightSwipe) {
-      setSwipedTaskId(null);
-    }
+    const isLeft = distance > 50;
+    const isRight = distance < -50;
+    if (isLeft) setSwipedTaskId(taskId);
+    else if (isRight) setSwipedTaskId(null);
   };
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handleMouseDown = (e) => {
     setTouchEnd(null);
     setTouchStart(e.clientX);
   };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (touchStart !== null) {
-      setTouchEnd(e.clientX);
-    }
+  const handleMouseMove = (e) => {
+    if (touchStart !== null) setTouchEnd(e.clientX);
   };
-
-  const handleMouseUp = (taskId: number) => {
-    if (!touchStart || !touchEnd) {
+  const handleMouseUp = (taskId) => {
+    if (touchStart === null || touchEnd === null) {
       setTouchStart(null);
       return;
     }
-    
     const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > 50;
-    const isRightSwipe = distance < -50;
-    
-    if (isLeftSwipe) {
-      setSwipedTaskId(taskId);
-    } else if (isRightSwipe) {
-      setSwipedTaskId(null);
-    }
-    
+    const isLeft = distance > 50;
+    const isRight = distance < -50;
+    if (isLeft) setSwipedTaskId(taskId);
+    else if (isRight) setSwipedTaskId(null);
     setTouchStart(null);
     setTouchEnd(null);
   };
@@ -133,7 +109,7 @@ export const Home = (): JSX.Element => {
         description: newTaskDescription,
         completed: false,
       };
-      setTasks([...tasks, newTask]);
+      setTasks((prev) => [...prev, newTask]);
       setNewTaskSubject("");
       setNewTaskDescription("");
       setShowAddInput(false);
@@ -141,17 +117,12 @@ export const Home = (): JSX.Element => {
   };
 
   return (
-    <div
-      className="bg-[#000] w-full min-h-screen flex items-center justify-center"
-      data-model-id="22:250"
-    >
+    <div className="bg-[#000] w-full min-h-screen flex items-center justify-center" data-model-id="22:250">
       <div className="h-screen w-[480px] relative bg-[#e7edff] flex flex-col">
         <header className="w-[480px] h-[76px] flex items-end bg-[#e7edff] shadow-[0px_2px_2px_#2323231a] flex-shrink-0">
           <nav className="h-12 w-full bg-[#e7edff] flex items-center justify-between px-6">
             <div className="w-7 h-7" />
-
             <div className="w-[92px] h-[38px] bg-[url(https://c.animaapp.com/mghllw7nnesCnv/img/logo-1-8.png)] bg-cover bg-[50%_50%]" />
-
             <button
               onClick={handleProfileClick}
               className="w-7 h-7 rounded-full overflow-hidden hover:opacity-80 transition-opacity"
@@ -170,27 +141,15 @@ export const Home = (): JSX.Element => {
             <h1 className="[font-family:'Noto_Sans_KR',Helvetica] font-black text-[#628af9] text-[40px] tracking-[0] leading-[normal]">
               D-day
             </h1>
-
             <p className="font-normal text-[#000000] text-xs [font-family:'Noto_Sans_KR',Helvetica] tracking-[0] leading-[normal]">
-              <span className="[font-family:'Noto_Sans_KR',Helvetica] font-normal text-[#000000] text-xs tracking-[0]">
-                다음 모의고사까지{" "}
-              </span>
+              <span>다음 모의고사까지 </span>
               <span className="font-bold">105일</span>
-              <span className="[font-family:'Noto_Sans_KR',Helvetica] font-normal text-[#000000] text-xs tracking-[0]">
-                {" "}
-                남았습니다!
-              </span>
+              <span> 남았습니다!</span>
             </p>
-
             <p className="font-normal text-[#000000] text-xs [font-family:'Noto_Sans_KR',Helvetica] tracking-[0] leading-[normal]">
-              <span className="[font-family:'Noto_Sans_KR',Helvetica] font-normal text-[#000000] text-xs tracking-[0]">
-                수능까지{" "}
-              </span>
+              <span>수능까지 </span>
               <span className="font-bold">200일</span>
-              <span className="[font-family:'Noto_Sans_KR',Helvetica] font-normal text-[#000000] text-xs tracking-[0]">
-                {" "}
-                남았습니다!
-              </span>
+              <span> 남았습니다!</span>
             </p>
           </section>
 
@@ -220,10 +179,7 @@ export const Home = (): JSX.Element => {
 
                 <div className="mt-4 flex flex-col gap-[5px]">
                   {tasks.map((task) => (
-                    <div
-                      key={task.id}
-                      className="relative w-full h-[50px] overflow-hidden rounded-[10px]"
-                    >
+                    <div key={task.id} className="relative w-full h-[50px] overflow-hidden rounded-[10px]">
                       <button
                         onClick={() => deleteTask(task.id)}
                         className="absolute right-0 top-0 h-full w-[80px] bg-[#ff6b6b] flex items-center justify-center"
@@ -246,7 +202,7 @@ export const Home = (): JSX.Element => {
                           task.completed ? "bg-[#a8c5f7]" : "bg-[#628af9]"
                         }`}
                         style={{
-                          transform: swipedTaskId === task.id ? 'translateX(-80px)' : 'translateX(0)',
+                          transform: swipedTaskId === task.id ? "translateX(-80px)" : "translateX(0)",
                         }}
                       >
                         <button
@@ -254,14 +210,10 @@ export const Home = (): JSX.Element => {
                           className="flex-1 flex items-center justify-between h-full"
                         >
                           <div className="text-left">
-                            <h3
-                              className={`font-bold text-xs [font-family:'Noto_Sans_KR',Helvetica] tracking-[0] leading-[normal] text-[#f8f9ff]`}
-                            >
+                            <h3 className="font-bold text-xs [font-family:'Noto_Sans_KR',Helvetica] tracking-[0] leading-[normal] text-[#f8f9ff]">
                               {task.subject}
                             </h3>
-                            <p
-                              className={`mt-[2px] font-normal text-[10px] [font-family:'Noto_Sans_KR',Helvetica] tracking-[0] leading-[normal] text-[#f8f9ff]`}
-                            >
+                            <p className="mt-[2px] font-normal text-[10px] [font-family:'Noto_Sans_KR',Helvetica] tracking-[0] leading-[normal] text-[#f8f9ff]">
                               {task.description}
                             </p>
                           </div>
@@ -292,7 +244,7 @@ export const Home = (): JSX.Element => {
                         placeholder="할 일 내용"
                         value={newTaskDescription}
                         onChange={(e) => setNewTaskDescription(e.target.value)}
-                        className="h-[30px] text-[10px] [font-family:'Noto_Sans_KR',Helvetica] border-[#628af9]"
+                        className="h-[30px] text-[10px] [font-family:'Noto_SANS_KR',Helvetica] border-[#628af9]"
                       />
                       <div className="flex gap-2">
                         <Button
@@ -342,14 +294,12 @@ export const Home = (): JSX.Element => {
                       내 점수
                     </span>
                   </div>
-
                   <div className="flex items-center gap-1">
                     <div className="w-2 h-2 bg-[#ff9d89] rounded" />
                     <span className="font-normal text-[#000000] text-[9px] [font-family:'Noto_Sans_KR',Helvetica] tracking-[0] leading-[normal]">
                       우리 학교 평균 점수
                     </span>
                   </div>
-
                   <div className="flex items-center gap-1">
                     <div className="w-2 h-2 bg-[#dedede] rounded" />
                     <span className="font-normal text-[#000000] text-[9px] [font-family:'Noto_Sans_KR',Helvetica] tracking-[0] leading-[normal]">
@@ -360,24 +310,16 @@ export const Home = (): JSX.Element => {
 
                 <div className="mt-[21px] relative h-[189px]">
                   <div className="absolute left-0 top-0 bottom-[25px] flex flex-col justify-between text-right pr-[6px]">
-                    <span className="[font-family:'Noto_Sans_KR',Helvetica] font-normal text-[#23232380] text-[11px] tracking-[0] leading-[normal]">
-                      100
-                    </span>
-                    <span className="[font-family:'Noto_Sans_KR',Helvetica] font-normal text-[#23232380] text-[11px] tracking-[0] leading-[normal]">
-                      75
-                    </span>
-                    <span className="[font-family:'Noto_Sans_KR',Helvetica] font-normal text-[#23232380] text-[11px] tracking-[0] leading-[normal]">
-                      50
-                    </span>
-                    <span className="[font-family:'Noto_Sans_KR',Helvetica] font-normal text-[#23232380] text-[11px] tracking-[0] leading-[normal]">
-                      25
-                    </span>
+                    <span className="[font-family:'Noto_Sans_KR',Helvetica] font-normal text-[#23232380] text-[11px] tracking-[0] leading-[normal]">100</span>
+                    <span className="[font-family:'Noto_Sans_KR',Helvetica] font-normal text-[#23232380] text-[11px] tracking-[0] leading-[normal]">75</span>
+                    <span className="[font-family:'Noto_Sans_KR',Helvetica] font-normal text-[#23232380] text-[11px] tracking-[0] leading-[normal]">50</span>
+                    <span className="[font-family:'Noto_Sans_KR',Helvetica] font-normal text-[#23232380] text-[11px] tracking-[0] leading-[normal]">25</span>
                   </div>
 
                   <div className="absolute left-[37px] right-0 top-0 bottom-[25px] flex flex-col justify-between">
-                    {[0, 1, 2, 3, 4].map((index) => (
+                    {[0, 1, 2, 3, 4].map((idx) => (
                       <img
-                        key={index}
+                        key={idx}
                         className="w-full h-px object-cover"
                         alt="Grid line"
                         src="https://c.animaapp.com/mghllw7nnesCnv/img/line-21.svg"
@@ -388,24 +330,9 @@ export const Home = (): JSX.Element => {
                   <div className="absolute left-[37px] right-0 top-0 bottom-[25px] flex items-end justify-between px-[31px]">
                     {subjects.map((subject, index) => (
                       <div key={index} className="flex gap-[2px] items-end">
-                        <div
-                          className="w-2.5 bg-[#628af9]"
-                          style={{
-                            height: `${(subject.myScore / 100) * 173}px`,
-                          }}
-                        />
-                        <div
-                          className="w-2.5 bg-[#ff9d89]"
-                          style={{
-                            height: `${(subject.schoolAvg / 100) * 173}px`,
-                          }}
-                        />
-                        <div
-                          className="w-2.5 bg-[#dedede]"
-                          style={{
-                            height: `${(subject.nationalAvg / 100) * 173}px`,
-                          }}
-                        />
+                        <div className="w-2.5 bg-[#628af9]" style={{ height: `${(subject.myScore / 100) * 173}px` }} />
+                        <div className="w-2.5 bg-[#ff9d89]" style={{ height: `${(subject.schoolAvg / 100) * 173}px` }} />
+                        <div className="w-2.5 bg-[#dedede]" style={{ height: `${(subject.nationalAvg / 100) * 173}px` }} />
                       </div>
                     ))}
                   </div>
@@ -414,10 +341,7 @@ export const Home = (): JSX.Element => {
 
                   <div className="absolute left-[37px] right-0 bottom-0 flex justify-between px-[4px] pt-[6px]">
                     {subjects.map((subject, index) => (
-                      <span
-                        key={index}
-                        className="font-bold text-[#232323cc] text-[11px] [font-family:'Noto_Sans_KR',Helvetica] tracking-[0] leading-[normal]"
-                      >
+                      <span key={index} className="font-bold text-[#232323cc] text-[11px] [font-family:'Noto_Sans_KR',Helvetica] tracking-[0] leading-[normal]">
                         {subject.name}
                       </span>
                     ))}
@@ -431,22 +355,9 @@ export const Home = (): JSX.Element => {
         <nav className="w-[480px] h-[70px] bg-[#f8f9ff] rounded-[15px_15px_0px_0px] shadow-[0px_-2px_8px_#2323231a] flex-shrink-0">
           <div className="h-full flex items-start justify-around pt-3">
             {navItems.map((item, index) => (
-              <button
-                key={index}
-                className="h-auto flex flex-col items-center gap-[5px]"
-              >
-                <item.icon
-                  className={`w-7 h-7 ${
-                    item.active
-                      ? "text-[#628af9] fill-[#628af9]"
-                      : "text-[#2323234c]"
-                  }`}
-                />
-                <span
-                  className={`font-bold text-[10px] [font-family:'Noto_Sans_KR',Helvetica] tracking-[0] leading-[normal] ${
-                    item.active ? "text-[#628af9]" : "text-[#2323234c]"
-                  }`}
-                >
+              <button key={index} className="h-auto flex flex-col items-center gap-[5px]">
+                <item.icon className={`w-7 h-7 ${item.active ? "text-[#628af9] fill-[#628af9]" : "text-[#2323234c]"}`} />
+                <span className={`font-bold text-[10px] [font-family:'Noto_Sans_KR',Helvetica] tracking-[0] leading-[normal] ${item.active ? "text-[#628af9]" : "text-[#2323234c]"}`}>
                   {item.label}
                 </span>
               </button>
@@ -457,3 +368,5 @@ export const Home = (): JSX.Element => {
     </div>
   );
 };
+
+export default Home;

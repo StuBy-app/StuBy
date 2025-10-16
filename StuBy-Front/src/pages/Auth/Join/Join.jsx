@@ -98,7 +98,7 @@ export default function Join() {
       // 우리 axios 인스턴스로 호출 (baseURL + 인터셉터 적용됨)
       await api.post("/api/auth/join", payload);
       alert("회원가입이 완료되었습니다!");
-      navigate("/login"); // 회원가입 성공 시 로그인 페이지로 이동
+      navigate("/auth/login"); // 회원가입 성공 시 로그인 페이지로 이동
     } catch (err) {
       // 에러 메시지 추출
       const msg =
@@ -224,7 +224,7 @@ export default function Join() {
           </div>
 
           <div className="flex gap-0 mt-[15px] w-80 translate-y-[-1rem] animate-fade-in opacity-0 [--animation-delay:900ms]">
-            <div className="w-[230px] h-[45px] bg-white rounded-[15px_0px_0px_15px] border-2 border-solid border-[#628af9]">
+            <div className="w-[320px] h-[45px] bg-white rounded-[15px_15px_15px_15px] border-2 border-solid border-[#628af9]">
               <Input
                 type="text"
                 placeholder="학교 입력"
@@ -236,17 +236,6 @@ export default function Join() {
                 }`}
               />
             </div>
-            <Button
-              type="button"
-              className={`w-[85px] h-[45px] rounded-[0px_15px_15px_0px] border-0 text-[#f8f9ff] [font-family:'Noto_Sans_KR',Helvetica] font-medium text-xs transition-colors ${
-                isSchoolDisabled
-                  ? "bg-[#a8c5f7] cursor-not-allowed"
-                  : "bg-[#628af9] hover:bg-[#628af9]/90"
-              }`}
-              disabled={isSchoolDisabled}
-            >
-              학교 찾기
-            </Button>
           </div>
 
           <div className="w-80 bg-white rounded-[15px] border-2 border-solid border-[#628af9] h-[45px] mt-[15px] translate-y-[-1rem] animate-fade-in opacity-0 [--animation-delay:1000ms]">

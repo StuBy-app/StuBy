@@ -1,41 +1,15 @@
 import { ChevronLeftIcon } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "../../components/ui/button";
-import { Card, CardContent } from "../../components/ui/card";
+import { Button } from "../../components/button";
+import { Card, CardContent } from "../../components/card";
 import { getCurrentUser, getMockGrades, getSchoolGrades } from "../../db";
 
-type ExamType = "mock" | "school";
-
-interface MockExamData {
-  userId: number;
-  month: string;
-  korean1: number;
-  korean2: number;
-  english: number;
-  math1: number;
-  math2: number;
-  elective1: number;
-  elective2: number;
-  history: number;
-  total: number;
-}
-
-interface SchoolExamData {
-  userId: number;
-  semester: string;
-  korean: number;
-  english: number;
-  math: number;
-  customSubjects: { name: string; score: number }[];
-  total: number;
-}
-
-export const GradeView = (): JSX.Element => {
+export const GradeView = () => {
   const navigate = useNavigate();
-  const [examType, setExamType] = useState<ExamType>("mock");
-  const [mockExams, setMockExams] = useState<MockExamData[]>([]);
-  const [schoolExams, setSchoolExams] = useState<SchoolExamData[]>([]);
+  const [examType, setExamType] = useState("mock"); // "mock" | "school"
+  const [mockExams, setMockExams] = useState([]);
+  const [schoolExams, setSchoolExams] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -48,7 +22,7 @@ export const GradeView = (): JSX.Element => {
   }, []);
 
   const handleBackClick = () => {
-    navigate("/u4358u4449u4363u4469u4369u4454u4363u4469u4364u4469");
+    navigate("/mypage");
   };
 
   if (loading) {
@@ -128,40 +102,17 @@ export const GradeView = (): JSX.Element => {
                     </thead>
                     <tbody>
                       {mockExams.map((exam, index) => (
-                        <tr
-                          key={index}
-                          className="border-b border-[#e7edff] hover:bg-[#f8f9ff] transition-colors"
-                        >
-                          <td className="py-2 px-1 text-center font-medium text-[#628af9]">
-                            {exam.month}
-                          </td>
-                          <td className="py-2 px-1 text-center text-[#232323]">
-                            {exam.korean1}
-                          </td>
-                          <td className="py-2 px-1 text-center text-[#232323]">
-                            {exam.korean2}
-                          </td>
-                          <td className="py-2 px-1 text-center text-[#232323]">
-                            {exam.english}
-                          </td>
-                          <td className="py-2 px-1 text-center text-[#232323]">
-                            {exam.math1}
-                          </td>
-                          <td className="py-2 px-1 text-center text-[#232323]">
-                            {exam.math2}
-                          </td>
-                          <td className="py-2 px-1 text-center text-[#232323]">
-                            {exam.elective1}
-                          </td>
-                          <td className="py-2 px-1 text-center text-[#232323]">
-                            {exam.elective2}
-                          </td>
-                          <td className="py-2 px-1 text-center text-[#232323]">
-                            {exam.history}
-                          </td>
-                          <td className="py-2 px-1 text-center font-bold text-[#628af9]">
-                            {exam.total}
-                          </td>
+                        <tr key={index} className="border-b border-[#e7edff] hover:bg-[#f8f9ff] transition-colors">
+                          <td className="py-2 px-1 text-center font-medium text-[#628af9]">{exam.month}</td>
+                          <td className="py-2 px-1 text-center text-[#232323]">{exam.korean1}</td>
+                          <td className="py-2 px-1 text-center text-[#232323]">{exam.korean2}</td>
+                          <td className="py-2 px-1 text-center text-[#232323]">{exam.english}</td>
+                          <td className="py-2 px-1 text-center text-[#232323]">{exam.math1}</td>
+                          <td className="py-2 px-1 text-center text-[#232323]">{exam.math2}</td>
+                          <td className="py-2 px-1 text-center text-[#232323]">{exam.elective1}</td>
+                          <td className="py-2 px-1 text-center text-[#232323]">{exam.elective2}</td>
+                          <td className="py-2 px-1 text-center text-[#232323]">{exam.history}</td>
+                          <td className="py-2 px-1 text-center font-bold text-[#628af9]">{exam.total}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -203,28 +154,15 @@ export const GradeView = (): JSX.Element => {
                     </thead>
                     <tbody>
                       {schoolExams.map((exam, index) => (
-                        <tr
-                          key={index}
-                          className="border-b border-[#e7edff] hover:bg-[#f8f9ff] transition-colors"
-                        >
-                          <td className="py-2 px-2 text-center font-medium text-[#628af9]">
-                            {exam.semester}
-                          </td>
+                        <tr key={index} className="border-b border-[#e7edff] hover:bg-[#f8f9ff] transition-colors">
+                          <td className="py-2 px-2 text-center font-medium text-[#628af9]">{exam.semester}</td>
+                          <td className="py-2 px-2 text-center text-[#232323]">{exam.korean}</td>
+                          <td className="py-2 px-2 text-center text-[#232323]">{exam.english}</td>
+                          <td className="py-2 px-2 text-center text-[#232323]">{exam.math}</td>
                           <td className="py-2 px-2 text-center text-[#232323]">
-                            {exam.korean}
+                            {exam.customSubjects.map((s) => `${s.name}: ${s.score}`).join(", ")}
                           </td>
-                          <td className="py-2 px-2 text-center text-[#232323]">
-                            {exam.english}
-                          </td>
-                          <td className="py-2 px-2 text-center text-[#232323]">
-                            {exam.math}
-                          </td>
-                          <td className="py-2 px-2 text-center text-[#232323]">
-                            {exam.customSubjects.map(s => `${s.name}: ${s.score}`).join(", ")}
-                          </td>
-                          <td className="py-2 px-2 text-center font-bold text-[#628af9]">
-                            {exam.total}
-                          </td>
+                          <td className="py-2 px-2 text-center font-bold text-[#628af9]">{exam.total}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -255,3 +193,5 @@ export const GradeView = (): JSX.Element => {
     </div>
   );
 };
+
+export default GradeView;
