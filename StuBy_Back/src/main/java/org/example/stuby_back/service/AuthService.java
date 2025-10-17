@@ -46,7 +46,7 @@ public class AuthService {
         User joinUser = dto.toUser(passwordEncoder);
         userMapper.insert(joinUser);
 
-        final String DEFAULT_USER_ROLE = "ROLE_USER";
+        final String DEFAULT_USER_ROLE = "기타";
         Role foundRole = roleMapper.findByRoleName(DEFAULT_USER_ROLE);
 
         UserRole userRole = UserRole.builder()
