@@ -1,4 +1,4 @@
-
+// src/pages/Auth/Join/Join.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -22,13 +22,14 @@ export default function Join() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
+  const [age, setAge] = useState("");            // ✅ 추가
   const [email, setEmail] = useState("");
 
-  // 선택/조건부 상태 (TS 제네릭 제거, 문자열로 통일)
-  const [gender, setGender] = useState(""); // "male" | "female" | ""
+  // 선택/조건부 상태
+  const [gender, setGender] = useState("");      // "male" | "female" | ""
   const [affiliation, setAffiliation] = useState(""); // "중학생" | "고등학생" | "기타" | ""
   const [school, setSchool] = useState("");
-  const [grade, setGrade] = useState(""); // "grade1" | "grade2" | "grade3" | ""
+  const [grade, setGrade] = useState("");        // "grade1" | "grade2" | "grade3" | ""
 
   const [isGradeDisabled, setIsGradeDisabled] = useState(false);
   const [isSchoolDisabled, setIsSchoolDisabled] = useState(false);
@@ -64,8 +65,8 @@ export default function Join() {
     if (submitting) return;
     setFormIncomplete(false);
 
-    // 필수값 체크
-    const required = [username, password, confirmPassword, name, email, gender, affiliation];
+    // 필수값 체크 (age 포함)
+    const required = [username, password, confirmPassword, name, age, email, gender, affiliation];
     if (affiliation !== "기타") {
       required.push(school, grade);
     }
@@ -81,26 +82,32 @@ export default function Join() {
       return;
     }
 
+    // 나이 숫자 변환 + 최소 유효성
+    const ageNumber = Number(age);
+    if (!Number.isFinite(ageNumber) || ageNumber <= 0) {
+      alert("올바른 나이를 입력해주세요.");
+      return;
+    }
+
     const payload = {
       username,
       password,
       name,
+      age: ageNumber,                 // ✅ 추가
       email,
-      gender,                       // "male" | "female"
-      affiliation,                  // "중학생" | "고등학생" | "기타"
+      gender,                         // "male" | "female"
+      affiliation,                    // "중학생" | "고등학생" | "기타"
       school: affiliation === "기타" ? "" : school,
-      grade: affiliation === "기타" ? null : grade, // 백엔드 스키마에 맞춰 null 전달
+      grade: affiliation === "기타" ? null : grade,
       desiredUniversities: [],
     };
 
     try {
       setSubmitting(true);
-      // 우리 axios 인스턴스로 호출 (baseURL + 인터셉터 적용됨)
       await api.post("/api/auth/join", payload);
       alert("회원가입이 완료되었습니다!");
       navigate("/auth/login"); // 회원가입 성공 시 로그인 페이지로 이동
     } catch (err) {
-      // 에러 메시지 추출
       const msg =
         err?.response?.data?.message ||
         err?.response?.data?.error ||
@@ -112,10 +119,7 @@ export default function Join() {
   };
 
   return (
-    <div
-      className="bg-[#000] w-full min-h-screen flex items-center justify-center"
-      data-model-id="15:191"
-    >
+    <div className="bg-[#000] w-full min-h-screen flex items-center justify-center" data-model-id="15:191">
       <div className="w-[480px] h-screen bg-[#f8f9ff] overflow-y-auto scrollbar-hide flex flex-col items-center justify-center">
         <div className="w-[345px] relative flex flex-col items-center py-5">
           <img
@@ -124,6 +128,7 @@ export default function Join() {
             src="https://c.animaapp.com/mghllw7nnesCnv/img/logo-1-8.png"
           />
 
+          {/* 아이디 */}
           <div className="w-80 bg-white rounded-[15px] border-2 border-solid border-[#628af9] h-[45px] mt-[36px] translate-y-[-1rem] animate-fade-in opacity-0 [--animation-delay:200ms]">
             <Input
               type="text"
@@ -134,6 +139,7 @@ export default function Join() {
             />
           </div>
 
+          {/* 비밀번호 */}
           <div className="w-80 bg-white rounded-[15px] border-2 border-solid border-[#628af9] h-[45px] mt-[15px] translate-y-[-1rem] animate-fade-in opacity-0 [--animation-delay:300ms]">
             <Input
               type="password"
@@ -144,6 +150,7 @@ export default function Join() {
             />
           </div>
 
+          {/* 비밀번호 재확인 */}
           <div className="w-80 bg-white rounded-[15px] border-2 border-solid border-[#628af9] h-[45px] mt-[15px] translate-y-[-1rem] animate-fade-in opacity-0 [--animation-delay:400ms]">
             <Input
               type="password"
@@ -165,6 +172,7 @@ export default function Join() {
             </p>
           )}
 
+          {/* 성별 */}
           <div className="flex gap-[7px] mt-[15px] w-80 translate-y-[-1rem] animate-fade-in opacity-0 [--animation-delay:500ms]">
             <Button
               type="button"
@@ -190,6 +198,7 @@ export default function Join() {
             </Button>
           </div>
 
+          {/* 성명 */}
           <div className="w-80 bg-white rounded-[15px] border-2 border-solid border-[#628af9] h-[45px] mt-[15px] translate-y-[-1rem] animate-fade-in opacity-0 [--animation-delay:600ms]">
             <Input
               type="text"
@@ -200,6 +209,19 @@ export default function Join() {
             />
           </div>
 
+          {/* ✅ 나이 */}
+          <div className="w-80 bg-white rounded-[15px] border-2 border-solid border-[#628af9] h-[45px] mt-[15px] translate-y-[-1rem] animate-fade-in opacity-0 [--animation-delay:650ms]">
+            <Input
+              type="number"
+              placeholder="나이"
+              value={age}
+              min={1}
+              onChange={(e) => setAge(e.target.value)}     // ✅ 수정
+              className="w-full h-full border-0 bg-transparent rounded-[15px] px-4 text-xs [font-family:'Noto_Sans_KR',Helvetica] font-medium text-[#232323] placeholder:text-[#23232366] focus-visible:ring-0 focus-visible:ring-offset-0"
+            />
+          </div>
+
+          {/* 이메일 */}
           <div className="w-80 bg-white rounded-[15px] border-2 border-solid border-[#628af9] h-[45px] mt-[15px] translate-y-[-1rem] animate-fade-in opacity-0 [--animation-delay:700ms]">
             <Input
               type="email"
@@ -210,6 +232,7 @@ export default function Join() {
             />
           </div>
 
+          {/* 소속 */}
           <div className="w-80 bg-white rounded-[15px] border-2 border-solid border-[#628af9] h-[45px] mt-[15px] translate-y-[-1rem] animate-fade-in opacity-0 [--animation-delay:800ms]">
             <Select value={affiliation} onValueChange={(v) => setAffiliation(v)}>
               <SelectTrigger className="w-full h-full border-0 bg-transparent rounded-[15px] px-4 text-xs [font-family:'Noto_Sans_KR',Helvetica] font-medium text-[#232323] focus:ring-0 focus:ring-offset-0">
@@ -223,21 +246,23 @@ export default function Join() {
             </Select>
           </div>
 
+          {/* 학교 */}
           <div className="flex gap-0 mt-[15px] w-80 translate-y-[-1rem] animate-fade-in opacity-0 [--animation-delay:900ms]">
-            <div className="w-[320px] h-[45px] bg-white rounded-[15px_15px_15px_15px] border-2 border-solid border-[#628af9]">
+            <div className="w-[320px] h-[45px] bg-white rounded-[15px] border-2 border-solid border-[#628af9]">
               <Input
                 type="text"
                 placeholder="학교 입력"
                 value={school}
                 onChange={(e) => setSchool(e.target.value)}
                 disabled={isSchoolDisabled}
-                className={`w-full h-full border-0 bg-transparent rounded-[15px_0px_0px_15px] px-4 text-xs [font-family:'Noto_Sans_KR',Helvetica] font-medium text-[#232323] placeholder:text-[#23232366] focus-visible:ring-0 focus-visible:ring-offset-0 ${
+                className={`w-full h-full border-0 bg-transparent rounded-[15px] px-4 text-xs [font-family:'Noto_Sans_KR',Helvetica] font-medium text-[#232323] placeholder:text-[#23232366] focus-visible:ring-0 focus-visible:ring-offset-0 ${
                   isSchoolDisabled ? "bg-gray-100 cursor-not-allowed" : ""
                 }`}
               />
             </div>
           </div>
 
+          {/* 학년 */}
           <div className="w-80 bg-white rounded-[15px] border-2 border-solid border-[#628af9] h-[45px] mt-[15px] translate-y-[-1rem] animate-fade-in opacity-0 [--animation-delay:1000ms]">
             <Select value={grade} onValueChange={(v) => setGrade(v)} disabled={isGradeDisabled}>
               <SelectTrigger className="w-full h-full border-0 bg-transparent rounded-[15px] px-4 text-xs [font-family:'Noto_Sans_KR',Helvetica] font-medium text-[#232323] focus:ring-0 focus:ring-offset-0">
@@ -251,6 +276,7 @@ export default function Join() {
             </Select>
           </div>
 
+          {/* 확인 */}
           <Button
             type="button"
             onClick={handleConfirm}

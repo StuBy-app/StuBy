@@ -1,3 +1,4 @@
+// src/pages/MyPage/MyPageModify.jsx
 import { ChevronLeftIcon, SearchIcon, SettingsIcon, EditIcon } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -21,17 +22,13 @@ import {
 } from "../../components/select";
 import { Separator } from "../../components/separator";
 import { ToggleGroup, ToggleGroupItem } from "../../components/toggle-group";
-import api from "../../api/axios"
+import api from "../../api/axios";
 
-/**
- * 서버 데이터로 필드 렌더를 돌리기 위해 label/편집가능여부만 정의
- * value는 formData에서 주입합니다.
- */
 const FIELD_META = [
   { label: "아이디", key: "username", editable: false },
   { label: "비밀번호", key: "password", editable: true },
   { label: "이메일", key: "email", editable: false },
-  { label: "성별", key: "gender", editable: true },           // 토글 그룹
+  { label: "성별", key: "gender", editable: true },
   { label: "소속", key: "affiliation", editable: true, type: "select" },
   { label: "학교명", key: "school", editable: true, type: "search" },
 ];
@@ -39,13 +36,12 @@ const FIELD_META = [
 const MyPageModify = () => {
   const navigate = useNavigate();
 
-  // 실제 서버 데이터가 들어갈 상태
   const [formData, setFormData] = useState({
-    username: "",      // 아이디(로그인 ID)
-    password: "",      // 비밀번호는 서버에서 내려주지 않으면 빈값 유지
+    username: "",
+    password: "",
     email: "",
-    gender: "",        // "male" | "female"
-    affiliation: "",   // "중학생" | "고등학생" | "기타" 등
+    gender: "",
+    affiliation: "",
     school: "",
   });
 
@@ -59,23 +55,19 @@ const MyPageModify = () => {
     let mounted = true;
     (async () => {
       try {
-        const { data } = await api.get("/api/users/profile"); // Authorization 헤더는 axios 인터셉터로 처리됨
+        const { data } = await api.get("/api/users/profile");
         if (!mounted) return;
-
-        // 백엔드 응답 필드명에 맞춰 매핑하세요.
-        // 아래는 예시: { username, email, gender, affiliation, school }
         setFormData({
           username: data?.username ?? "",
-          password: "", // 보안상 서버가 비번을 내려주진 않으므로 비워둠
+          password: "",
           email: data?.email ?? "",
-          gender: data?.gender ?? "", // "male" | "female"
+          gender: data?.gender ?? "",
           affiliation: data?.affiliation ?? "",
           school: data?.school ?? "",
         });
       } catch (err) {
         console.error(err);
-        // 토큰 만료 등 실패 시 로그인으로 이동
-        navigate("/login");
+        navigate("/auth/login"); // ✅ 수정
       } finally {
         if (mounted) setLoading(false);
       }
@@ -108,7 +100,6 @@ const MyPageModify = () => {
 
   const handleConfirmClick = async () => {
     try {
-      // 비밀번호를 수정하지 않으면 필드에서 제외해도 됩니다.
       const payload = {
         username: formData.username,
         email: formData.email,
@@ -127,16 +118,14 @@ const MyPageModify = () => {
   };
 
   const handleLogout = () => {
-    // 필요 시 토큰 제거
     localStorage.removeItem("AccessToken");
-    navigate("/login");
+    navigate("/auth/login"); // ✅ 수정
   };
 
   const handleWithdrawalConfirm = () => {
     setShowWithdrawalDialog(false);
-    // 실제 탈퇴 API가 있다면 호출하세요.
     localStorage.removeItem("AccessToken");
-    navigate("/login");
+    navigate("/auth/login"); // ✅ 수정
   };
 
   const handleProfileImageEdit = () => {
@@ -163,7 +152,7 @@ const MyPageModify = () => {
     <div className="bg-[#000] w-full min-h-screen flex items-center justify-center" data-model-id="31:486">
       <main className="h-screen w-[480px] relative bg-[#f8f9ff] flex flex-col">
         <header className="absolute top-0 left-0 w-[480px] h-[76px]">
-          <div className="absolute top-0 left-0 w-[480px] h-[76px] flex items-end bg-[#f8f9ff] shadow-[0px_2px_2px_#2323231a]">
+          <div className="absolute top-0 left-0 w-[480px] h-[76px] flex items=end bg-[#f8f9ff] shadow-[0px_2px_2px_#2323231a]">
             <div className="h-12 flex-1 bg-[#f8f9ff]" />
           </div>
 
@@ -192,7 +181,6 @@ const MyPageModify = () => {
                   />
                 </div>
 
-                {/* 아이디(이름) 편집: 필요 시 열어두기, 기본은 읽기 */}
                 {editingField === "username" ? (
                   <Input
                     autoFocus
@@ -224,13 +212,12 @@ const MyPageModify = () => {
             {/* 카드: 회원 정보 수정 */}
             <Card className="absolute top-[136px] left-0 w-[430px] h-[227px] rounded-[10px] border-2 border-[#628af9] translate-y-[-1rem] animate-fade-in opacity-0 [--animation-delay:400ms]">
               <CardContent className="p-0 relative h-full">
-                <div className="absolute top-[25px] left-[35px] w-[74px] [font-family:'Noto_SANS_KR',Helvetica] font-medium text-[#23232366] text-[10px] leading-4 tracking-[0]">
+                <div className="absolute top-[25px] left-[35px] w-[74px] [font-family:'Noto_Sans_KR',Helvetica] font-medium text-[#23232366] text-[10px] leading-4 tracking-[0]">
                   회원 정보 수정
                 </div>
 
                 {FIELD_META.map((field, index) => (
                   <div key={field.label}>
-                    {/* 라벨 위치 */}
                     <div
                       className={`absolute ${
                         index === 0
@@ -249,7 +236,6 @@ const MyPageModify = () => {
                       {field.label}
                     </div>
 
-                    {/* 소속 */}
                     {field.label === "소속" ? (
                       <div className="absolute top-40 left-[142px] w-[200px]">
                         <Select
@@ -267,7 +253,6 @@ const MyPageModify = () => {
                         </Select>
                       </div>
                     ) : field.label === "학교명" ? (
-                      // 학교명
                       <div className="absolute top-[186px] left-[142px] w-[200px] flex items-center gap-2">
                         {editingField === field.label ? (
                           <Input
@@ -306,7 +291,6 @@ const MyPageModify = () => {
                         </Button>
                       </div>
                     ) : field.label === "성별" ? (
-                      // 성별
                       <ToggleGroup
                         type="single"
                         value={formData.gender}
@@ -321,13 +305,12 @@ const MyPageModify = () => {
                         </ToggleGroupItem>
                         <ToggleGroupItem
                           value="female"
-                          className="w-[41px] h-[18px] bg-white rounded-[38px] border border-[#628af9] text-[10px] [font-family:'Noto_Sans_KR',Helvetica] font-normal text-[#23232380] leading-4 p-0 data-[state=on]:bg-[#628af9] data-[state=on]:text-[#f8f9ff] flex items-center justify-center"
+                          className="w-[41px] h-[18px] bg-white rounded-[38px] border border-[#628af9] text-[10px] [font-family:'Noto_Sans_KR',Helvetica] font-normal text-[#23232380] leading-4 p-0 data-[state=on]:bg-[#628af9] data-[state=on]:text-[#f8f9ff] flex items=center justify-center"
                         >
                           여성
                         </ToggleGroupItem>
                       </ToggleGroup>
                     ) : field.editable && editingField === field.label ? (
-                      // 비밀번호/이메일 편집 인풋
                       <Input
                         autoFocus
                         type={field.label === "비밀번호" ? "password" : "text"}
@@ -353,7 +336,6 @@ const MyPageModify = () => {
                         } left-[142px] w-[200px] h-[20px] border border-[#628af9] rounded px-2 [font-family:'Noto_Sans_KR',Helvetica] font-normal text-[#232323] text-[10px] leading-4 tracking-[0] focus-visible:ring-0 focus-visible:ring-offset-0`}
                       />
                     ) : (
-                      // 일반 표시 버튼(클릭으로 편집 전환)
                       <button
                         onClick={() => handleFieldClick(field.label)}
                         disabled={!field.editable}
@@ -385,7 +367,6 @@ const MyPageModify = () => {
                       </button>
                     )}
 
-                    {/* 연필 아이콘 (특수 필드 제외) */}
                     {field.editable &&
                       editingField !== field.label &&
                       field.label !== "아이디" &&

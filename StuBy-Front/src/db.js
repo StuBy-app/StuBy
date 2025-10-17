@@ -1,4 +1,4 @@
-
+// src/db.js
 
 // ------- In-Memory Data (샘플/시뮬레이션) -------
 let users = [
@@ -7,8 +7,9 @@ let users = [
     username: "testuser",
     password: "password123", // 일반 로그인 사용자만 가짐
     name: "테스트유저",
+    age: 18,                          // ✅ 추가
     email: "test@example.com",
-    gender: "female", // "male" | "female" | null
+    gender: "female",                 // "male" | "female" | null
     affiliation: "고등학생",
     school: "xx고등학교",
     grade: "grade3",
@@ -18,13 +19,14 @@ let users = [
     id: 2,
     username: "oauthuser",
     name: "OAuth유저",
+    age: 17,                          // ✅ 추가(임의)
     email: "oauth@example.com",
     gender: "male",
     affiliation: "중학생",
     school: "yy중학교",
     grade: "grade2",
     desiredUniversities: [],
-    provider: "google", // OAuth 사용자만 가짐 (google, naver, kakao)
+    provider: "google",               // OAuth 사용자만 가짐 (google, naver, kakao)
   },
 ];
 
@@ -63,7 +65,7 @@ let nextUserId = users.length > 0 ? Math.max(...users.map((u) => u.id)) + 1 : 1;
 
 // ------- User APIs -------
 export const registerUser = (newUser) => {
-  // newUser: { username, password?, name, email, gender, affiliation, school, grade, desiredUniversities, provider? }
+  // newUser: { username, password?, name, age?, email, gender, affiliation, school, grade, desiredUniversities, provider? }
   if (users.some((user) => user.username === newUser.username)) {
     console.log("Username already exists.");
     return null;
@@ -73,7 +75,11 @@ export const registerUser = (newUser) => {
     return null;
   }
 
-  const userWithId = { ...newUser, id: nextUserId++ };
+  const userWithId = {
+    id: nextUserId++,
+    ...newUser,
+    age: Number.isFinite(newUser.age) ? newUser.age : null,  // ✅ 보강
+  };
   users.push(userWithId);
   console.log("User registered:", userWithId);
   return userWithId;
@@ -107,6 +113,7 @@ export const registerOAuthUser = (email, provider, username) => {
     id: nextUserId++,
     username,
     name: username, // OAuth는 이름 정보가 없을 수 있으므로 username으로 대체
+    age: null,      // ✅ OAuth 가입 시 나이 정보 없음
     email,
     gender: null,
     affiliation: null,
@@ -153,7 +160,6 @@ export const getCurrentUser = () => currentUser;
 
 // ------- Grades APIs -------
 export const saveMockGrade = (userId, gradeData) => {
-  // gradeData: { month, korean1, korean2, english, math1, math2, elective1, elective2, history, total }
   mockGrades.push({ userId, ...gradeData });
   console.log("Mock grade saved:", { userId, ...gradeData });
 };
@@ -162,7 +168,6 @@ export const getMockGrades = (userId) =>
   mockGrades.filter((grade) => grade.userId === userId);
 
 export const saveSchoolGrade = (userId, gradeData) => {
-  // gradeData: { semester, korean, english, math, customSubjects: [{name, score}], total }
   schoolGrades.push({ userId, ...gradeData });
   console.log("School grade saved:", { userId, ...gradeData });
 };
