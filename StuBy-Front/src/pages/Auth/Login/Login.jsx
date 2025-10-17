@@ -25,24 +25,24 @@ export default function Login() {
 
   // 서버 응답에서 토큰 추출 → localStorage에 저장
   const saveAccessToken = (res) => {
-    const data = res?.data || {};
-    const inner = data?.data || data; // 백엔드가 ResponseDto.success(payload) 형태면 inner에 실제 payload가 담김
-    let token =
-      inner?.accessToken ||
-      inner?.token ||
-      inner?.Authorization ||
-      res?.headers?.authorization ||
-      res?.headers?.Authorization;
+  const data = res?.data ?? {};
+  // 백엔드가 data/body 어느 키를 쓰든 커버
+  const inner = data?.data ?? data?.body ?? data;
 
-    if (!token) return false;
+  let token =
+    inner?.accessToken ||
+    inner?.token ||
+    inner?.Authorization ||
+    (typeof inner === "string" ? inner : null) ||
+    res?.headers?.authorization ||
+    res?.headers?.Authorization;
 
-    // 인터셉터가 Authorization 헤더로 쓸 수 있게 Bearer 접두어 보장
-    if (!/^Bearer\s/i.test(token)) {
-      token = `Bearer ${token}`;
-    }
-    localStorage.setItem("AccessToken", token);
-    return true;
-  };
+  if (!token) return false;
+
+  if (!/^Bearer\s/i.test(token)) token = `Bearer ${token}`;
+  localStorage.setItem("AccessToken", token);
+  return true;
+};
 
   // 일반 로그인: /api/auth/login
   const handleLogin = async () => {
