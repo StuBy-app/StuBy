@@ -86,7 +86,7 @@ export default function Login() {
   };
 
   const handleSignupClick = () => {
-    navigate("/join");
+    navigate("/auth/join");
   };
 
   return (
