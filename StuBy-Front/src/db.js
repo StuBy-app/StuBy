@@ -1,5 +1,3 @@
-// src/db.js
-
 // ------- In-Memory Data (샘플/시뮬레이션) -------
 let users = [
   {

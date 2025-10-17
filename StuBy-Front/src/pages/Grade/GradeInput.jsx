@@ -11,7 +11,86 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/select";
-import { getCurrentUser, saveMockGrade, saveSchoolGrade } from "../../db";
+import api from "../../api/axios";
+import { saveMockGrade, saveSchoolGrade, setCurrentUser } from "../../db";
+
+/* ================= JWT / me 파싱 헬퍼 ================= */
+
+// 안전한 base64url 디코더 + JWT payload 파서
+const b64urlDecode = (s) => {
+  try {
+    const pad = "=".repeat((4 - (s.length % 4)) % 4);
+    const base64 = (s + pad).replace(/-/g, "+").replace(/_/g, "/");
+    const json = atob(base64);
+    return decodeURIComponent(
+      json
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+  } catch {
+    return null;
+  }
+};
+const parseJwtPayload = (token) => {
+  if (!token) return null;
+  const parts = token.replace(/^Bearer\s+/i, "").split(".");
+  if (parts.length < 2) return null;
+  try {
+    return JSON.parse(b64urlDecode(parts[1]));
+  } catch {
+    return null;
+  }
+};
+
+// 다양한 백엔드 응답 형태에서 안전하게 파싱
+const extractPrincipal = (resLike) => {
+  const d = resLike?.data ?? resLike;
+  const inner = d?.data ?? d?.body ?? d;
+
+  const topId = inner?.userId ?? inner?.id ?? null;
+  const topName = inner?.username ?? inner?.name ?? null;
+
+  const userLike = inner?.user ?? inner?.principal ?? inner?.account ?? null;
+
+  const nestedId =
+    userLike?.userId ??
+    userLike?.id ??
+    userLike?.user?.id ??
+    userLike?.principal?.id ??
+    null;
+
+  const nestedName =
+    userLike?.username ??
+    userLike?.name ??
+    userLike?.user?.username ??
+    userLike?.principal?.username ??
+    null;
+
+  const id = topId ?? nestedId ?? null;
+  const username = topName ?? nestedName ?? null;
+
+  return id ? { id, username: username ?? null } : null;
+};
+
+// 서버 me 시도 → 실패 시 JWT에서 userId 추출
+const ensureUserFromAnywhere = async () => {
+  try {
+    const res = await api.get("/api/account/principal");
+    const me = extractPrincipal(res);
+    if (me?.id) return { id: Number(me.id), username: me.username ?? undefined };
+  } catch (e) {
+    const me = extractPrincipal(e?.response);
+    if (me?.id) return { id: Number(me.id), username: me.username ?? undefined };
+  }
+  const ls = localStorage.getItem("AccessToken");
+  const payload = parseJwtPayload(ls);
+  const uid = payload?.userId ?? payload?.id ?? null;
+  const username = payload?.username ?? payload?.sub ?? undefined;
+  return uid != null ? { id: Number(uid), username } : null;
+};
+
+/* ===================================================== */
 
 export const GradeInput = () => {
   const navigate = useNavigate();
@@ -19,18 +98,16 @@ export const GradeInput = () => {
   // exam type & selects
   const [examType, setExamType] = useState("mock"); // "mock" | "school"
   const [mockMonth, setMockMonth] = useState("3월"); // "3월" | "6월" | "9월" | "11월"
-  const [koreanSubject, setKoreanSubject] = useState("화법과 작문"); // "화법과 작문" | "언어와 매체"
-  const [mathSubject, setMathSubject] = useState("확률과 통계"); // "확률과 통계" | "미적분" | "기하"
+  const [koreanSubject, setKoreanSubject] = useState("화법과 작문");
+  const [mathSubject, setMathSubject] = useState("확률과 통계");
   const [elective1, setElective1] = useState("생활과 윤리");
   const [elective2, setElective2] = useState("물리학Ⅰ");
 
   // scores
   const [scores, setScores] = useState({
-    korean1: "",
-    korean2: "",
+    korean: "",
     english: "",
-    math1: "",
-    math2: "",
+    math: "",
     elective1: "",
     elective2: "",
     history: "",
@@ -93,25 +170,31 @@ export const GradeInput = () => {
     "지구과학Ⅱ",
   ];
 
-  const handleSaveGrades = () => {
-    const currentUser = getCurrentUser();
-    if (!currentUser) {
+  const handleSaveGrades = async () => {
+    // ✅ 서버/토큰 어디서든 사용자 확보
+    const me = await ensureUserFromAnywhere();
+
+    if (!me?.id) {
       alert("로그인된 사용자 정보가 없습니다.");
       return;
     }
+
+    // 숫자형 ID 보장
+    const uid = Number(me.id);
+
+    // 프론트 캐시 세션에도 저장 – GradeView가 같은 ID로 조회
+    setCurrentUser({ id: uid, username: me.username ?? undefined });
 
     if (examType === "mock") {
       const total = Object.values(scores).reduce(
         (sum, v) => sum + (Number(v) || 0),
         0
       );
-      saveMockGrade(currentUser.id, {
+      saveMockGrade(uid, {
         month: mockMonth,
-        korean1: Number(scores.korean1) || 0,
-        korean2: Number(scores.korean2) || 0,
+        korean: Number(scores.korean) || 0,
         english: Number(scores.english) || 0,
-        math1: Number(scores.math1) || 0,
-        math2: Number(scores.math2) || 0,
+        math: Number(scores.math) || 0,
         elective1: Number(scores.elective1) || 0,
         elective2: Number(scores.elective2) || 0,
         history: Number(scores.history) || 0,
@@ -128,7 +211,7 @@ export const GradeInput = () => {
       );
       const total = baseTotal + customTotal;
 
-      saveSchoolGrade(currentUser.id, {
+      saveSchoolGrade(uid, {
         semester: "새 학기 시험", // TODO: 학기 선택 필드 추가 시 교체
         korean: Number(schoolScores.korean) || 0,
         english: Number(schoolScores.english) || 0,
@@ -142,7 +225,7 @@ export const GradeInput = () => {
     }
 
     alert("성적이 성공적으로 저장되었습니다!");
-    navigate("/mypage");
+    navigate("/grade/view"); // 저장 후 바로 확인
   };
 
   return (
@@ -216,33 +299,31 @@ export const GradeInput = () => {
                       국어
                     </h3>
                     <div className="flex flex-col gap-2">
+                      
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-[#23232380] [font-family:'Noto_Sans_KR',Helvetica] w-[100px]">
-                          독서 + 문학
-                        </span>
-                        <Input
-                          type="number"
-                          placeholder="점수"
-                          value={scores.korean1}
-                          onChange={(e) => handleScoreChange("korean1", e.target.value)}
-                          className="flex-1 h-[35px] text-[10px] [font-family:'Noto_Sans_KR',Helvetica] border-[#628af9]"
-                        />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Select value={koreanSubject} onValueChange={(value) => setKoreanSubject(value)}>
+                        <Select
+                          value={koreanSubject}
+                          onValueChange={(value) => setKoreanSubject(value)}
+                        >
                           <SelectTrigger className="w-[100px] h-[35px] text-[10px] [font-family:'Noto_Sans_KR',Helvetica] border-[#628af9]">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="화법과 작문">화법과 작문</SelectItem>
-                            <SelectItem value="언어와 매체">언어와 매체</SelectItem>
+                            <SelectItem value="화법과 작문">
+                              화법과 작문
+                            </SelectItem>
+                            <SelectItem value="언어와 매체">
+                              언어와 매체
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                         <Input
                           type="number"
                           placeholder="점수"
-                          value={scores.korean2}
-                          onChange={(e) => handleScoreChange("korean2", e.target.value)}
+                          value={scores.korean}
+                          onChange={(e) =>
+                            handleScoreChange("korean", e.target.value)
+                          }
                           className="flex-1 h-[35px] text-[10px] [font-family:'Noto_Sans_KR',Helvetica] border-[#628af9]"
                         />
                       </div>
@@ -259,7 +340,9 @@ export const GradeInput = () => {
                       type="number"
                       placeholder="점수"
                       value={scores.english}
-                      onChange={(e) => handleScoreChange("english", e.target.value)}
+                      onChange={(e) =>
+                        handleScoreChange("english", e.target.value)
+                      }
                       className="w-full h-[35px] text-[10px] [font-family:'Noto_Sans_KR',Helvetica] border-[#628af9]"
                     />
                   </CardContent>
@@ -271,25 +354,19 @@ export const GradeInput = () => {
                       수학
                     </h3>
                     <div className="flex flex-col gap-2">
+                      
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-[#23232380] [font-family:'Noto_Sans_KR',Helvetica] w-[100px]">
-                          수학Ⅰ + 수학Ⅱ
-                        </span>
-                        <Input
-                          type="number"
-                          placeholder="점수"
-                          value={scores.math1}
-                          onChange={(e) => handleScoreChange("math1", e.target.value)}
-                          className="flex-1 h-[35px] text-[10px] [font-family:'Noto_Sans_KR',Helvetica] border-[#628af9]"
-                        />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Select value={mathSubject} onValueChange={(value) => setMathSubject(value)}>
+                        <Select
+                          value={mathSubject}
+                          onValueChange={(value) => setMathSubject(value)}
+                        >
                           <SelectTrigger className="w-[100px] h-[35px] text-[10px] [font-family:'Noto_Sans_KR',Helvetica] border-[#628af9]">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="확률과 통계">확률과 통계</SelectItem>
+                            <SelectItem value="확률과 통계">
+                              확률과 통계
+                            </SelectItem>
                             <SelectItem value="미적분">미적분</SelectItem>
                             <SelectItem value="기하">기하</SelectItem>
                           </SelectContent>
@@ -297,8 +374,10 @@ export const GradeInput = () => {
                         <Input
                           type="number"
                           placeholder="점수"
-                          value={scores.math2}
-                          onChange={(e) => handleScoreChange("math2", e.target.value)}
+                          value={scores.math}
+                          onChange={(e) =>
+                            handleScoreChange("math", e.target.value)
+                          }
                           className="flex-1 h-[35px] text-[10px] [font-family:'Noto_Sans_KR',Helvetica] border-[#628af9]"
                         />
                       </div>
@@ -313,28 +392,36 @@ export const GradeInput = () => {
                     </h3>
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center gap-2">
-                        <Select value={elective1} onValueChange={(value) => setElective1(value)}>
+                        <Select
+                          value={elective1}
+                          onValueChange={(value) => setElective1(value)}
+                        >
                           <SelectTrigger className="w-[140px] h-[35px] text-[10px] [font-family:'Noto_Sans_KR',Helvetica] border-[#628af9]">
                             <SelectValue />
                           </SelectTrigger>
-                        <SelectContent>
-                          {electiveSubjects.map((subject) => (
-                            <SelectItem key={subject} value={subject}>
-                              {subject}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
+                          <SelectContent>
+                            {electiveSubjects.map((subject) => (
+                              <SelectItem key={subject} value={subject}>
+                                {subject}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
                         </Select>
                         <Input
                           type="number"
                           placeholder="점수"
                           value={scores.elective1}
-                          onChange={(e) => handleScoreChange("elective1", e.target.value)}
+                          onChange={(e) =>
+                            handleScoreChange("elective1", e.target.value)
+                          }
                           className="flex-1 h-[35px] text-[10px] [font-family:'Noto_Sans_KR',Helvetica] border-[#628af9]"
                         />
                       </div>
                       <div className="flex items-center gap-2">
-                        <Select value={elective2} onValueChange={(value) => setElective2(value)}>
+                        <Select
+                          value={elective2}
+                          onValueChange={(value) => setElective2(value)}
+                        >
                           <SelectTrigger className="w-[140px] h-[35px] text-[10px] [font-family:'Noto_Sans_KR',Helvetica] border-[#628af9]">
                             <SelectValue />
                           </SelectTrigger>
@@ -350,7 +437,9 @@ export const GradeInput = () => {
                           type="number"
                           placeholder="점수"
                           value={scores.elective2}
-                          onChange={(e) => handleScoreChange("elective2", e.target.value)}
+                          onChange={(e) =>
+                            handleScoreChange("elective2", e.target.value)
+                          }
                           className="flex-1 h-[35px] text-[10px] [font-family:'Noto_Sans_KR',Helvetica] border-[#628af9]"
                         />
                       </div>
@@ -367,7 +456,9 @@ export const GradeInput = () => {
                       type="number"
                       placeholder="점수"
                       value={scores.history}
-                      onChange={(e) => handleScoreChange("history", e.target.value)}
+                      onChange={(e) =>
+                        handleScoreChange("history", e.target.value)
+                      }
                       className="w-full h-[35px] text-[10px] [font-family:'Noto_Sans_KR',Helvetica] border-[#628af9]"
                     />
                   </CardContent>
@@ -386,7 +477,9 @@ export const GradeInput = () => {
                       type="number"
                       placeholder="점수"
                       value={schoolScores.korean}
-                      onChange={(e) => handleScoreChange("korean", e.target.value)}
+                      onChange={(e) =>
+                        handleScoreChange("korean", e.target.value)
+                      }
                       className="w-full h-[35px] text-[10px] [font-family:'Noto_Sans_KR',Helvetica] border-[#628af9]"
                     />
                   </CardContent>
@@ -401,7 +494,9 @@ export const GradeInput = () => {
                       type="number"
                       placeholder="점수"
                       value={schoolScores.english}
-                      onChange={(e) => handleScoreChange("english", e.target.value)}
+                      onChange={(e) =>
+                        handleScoreChange("english", e.target.value)
+                      }
                       className="w-full h-[35px] text-[10px] [font-family:'Noto_Sans_KR',Helvetica] border-[#628af9]"
                     />
                   </CardContent>
@@ -416,21 +511,28 @@ export const GradeInput = () => {
                       type="number"
                       placeholder="점수"
                       value={schoolScores.math}
-                      onChange={(e) => handleScoreChange("math", e.target.value)}
+                      onChange={(e) =>
+                        handleScoreChange("math", e.target.value)
+                      }
                       className="w-full h-[35px] text-[10px] [font-family:'Noto_Sans_KR',Helvetica] border-[#628af9]"
                     />
                   </CardContent>
                 </Card>
 
                 {customSubjects.map((subject) => (
-                  <Card key={subject.id} className="bg-white rounded-[10px] border-2 border-[#628af9]">
+                  <Card
+                    key={subject.id}
+                    className="bg-white rounded-[10px] border-2 border-[#628af9]"
+                  >
                     <CardContent className="p-4">
                       <div className="flex items-center gap-2 mb-3">
                         <Input
                           type="text"
                           placeholder="과목명"
                           value={subject.name}
-                          onChange={(e) => updateCustomSubject(subject.id, "name", e.target.value)}
+                          onChange={(e) =>
+                            updateCustomSubject(subject.id, "name", e.target.value)
+                          }
                           className="flex-1 h-[35px] text-sm [font-family:'Noto_Sans_KR',Helvetica] font-bold border-[#628af9]"
                         />
                         <Button
@@ -446,7 +548,9 @@ export const GradeInput = () => {
                         type="number"
                         placeholder="점수"
                         value={subject.score}
-                        onChange={(e) => updateCustomSubject(subject.id, "score", e.target.value)}
+                        onChange={(e) =>
+                          updateCustomSubject(subject.id, "score", e.target.value)
+                        }
                         className="w-full h-[35px] text-[10px] [font-family:'Noto_Sans_KR',Helvetica] border-[#628af9]"
                       />
                     </CardContent>

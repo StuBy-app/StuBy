@@ -3,7 +3,91 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../components/button";
 import { Card, CardContent } from "../../components/card";
-import { getCurrentUser, getMockGrades, getSchoolGrades } from "../../db";
+import api from "../../api/axios";
+import {
+  getCurrentUser,
+  setCurrentUser,
+  getMockGrades,
+  getSchoolGrades,
+} from "../../db";
+
+/* ================= JWT / me 파싱 헬퍼 ================= */
+
+// base64url + JWT parser
+const b64urlDecode = (s) => {
+  try {
+    const pad = "=".repeat((4 - (s.length % 4)) % 4);
+    const base64 = (s + pad).replace(/-/g, "+").replace(/_/g, "/");
+    const json = atob(base64);
+    return decodeURIComponent(
+      json
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+  } catch {
+    return null;
+  }
+};
+const parseJwtPayload = (token) => {
+  if (!token) return null;
+  const parts = token.replace(/^Bearer\s+/i, "").split(".");
+  if (parts.length < 2) return null;
+  try {
+    return JSON.parse(b64urlDecode(parts[1]));
+  } catch {
+    return null;
+  }
+};
+
+// 다양한 응답 모양에서 me 파싱
+const extractPrincipal = (resLike) => {
+  const d = resLike?.data ?? resLike;
+  const inner = d?.data ?? d?.body ?? d;
+
+  const topId = inner?.userId ?? inner?.id ?? null;
+  const topName = inner?.username ?? inner?.name ?? null;
+
+  const userLike = inner?.user ?? inner?.principal ?? inner?.account ?? null;
+
+  const nestedId =
+    userLike?.userId ??
+    userLike?.id ??
+    userLike?.user?.id ??
+    userLike?.principal?.id ??
+    null;
+
+  const nestedName =
+    userLike?.username ??
+    userLike?.name ??
+    userLike?.user?.username ??
+    userLike?.principal?.username ??
+    null;
+
+  const id = topId ?? nestedId ?? null;
+  const username = topName ?? nestedName ?? null;
+
+  return id ? { id, username: username ?? null } : null;
+};
+
+// 서버 me → 실패 시 JWT에서 userId 추출
+const ensureUserFromAnywhere = async () => {
+  try {
+    const res = await api.get("/api/account/principal");
+    const me = extractPrincipal(res);
+    if (me?.id) return { id: Number(me.id), username: me.username ?? undefined };
+  } catch (e) {
+    const me = extractPrincipal(e?.response);
+    if (me?.id) return { id: Number(me.id), username: me.username ?? undefined };
+  }
+  const ls = localStorage.getItem("AccessToken");
+  const payload = parseJwtPayload(ls);
+  const uid = payload?.userId ?? payload?.id ?? null;
+  const username = payload?.username ?? payload?.sub ?? undefined;
+  return uid != null ? { id: Number(uid), username } : null;
+};
+
+/* ===================================================== */
 
 export const GradeView = () => {
   const navigate = useNavigate();
@@ -12,13 +96,29 @@ export const GradeView = () => {
   const [schoolExams, setSchoolExams] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const currentUser = getCurrentUser();
-    if (currentUser) {
-      setMockExams(getMockGrades(currentUser.id));
-      setSchoolExams(getSchoolGrades(currentUser.id));
+  // 필요 시 서버에서 me 조회해서 currentUser 복구
+  const ensureMe = async () => {
+    const cached = getCurrentUser();
+    if (cached?.id) return cached;
+
+    const me = await ensureUserFromAnywhere();
+    if (me?.id) {
+      setCurrentUser(me);
+      return me;
     }
-    setLoading(false);
+    return null;
+  };
+
+  useEffect(() => {
+    (async () => {
+      const me = await ensureMe();
+      if (me?.id) {
+        const uid = Number(me.id); // 숫자 보장
+        setMockExams(getMockGrades(uid));
+        setSchoolExams(getSchoolGrades(uid));
+      }
+      setLoading(false);
+    })();
   }, []);
 
   const handleBackClick = () => {
@@ -29,7 +129,9 @@ export const GradeView = () => {
     return (
       <div className="bg-[#000] w-full min-h-screen flex items-center justify-center">
         <div className="h-screen w-[480px] relative bg-[#f8f9ff] flex flex-col items-center justify-center">
-          <p className="text-[#232323] [font-family:'Noto_Sans_KR',Helvetica]">성적 불러오는 중...</p>
+          <p className="text-[#232323] [font-family:'Noto_Sans_KR',Helvetica]">
+            성적 불러오는 중...
+          </p>
         </div>
       </div>
     );
@@ -89,11 +191,9 @@ export const GradeView = () => {
                     <thead>
                       <tr className="border-b-2 border-[#628af9]">
                         <th className="py-2 px-1 text-center font-bold text-[#232323]">월</th>
-                        <th className="py-2 px-1 text-center font-bold text-[#232323]">국어1</th>
-                        <th className="py-2 px-1 text-center font-bold text-[#232323]">국어2</th>
+                        <th className="py-2 px-1 text-center font-bold text-[#232323]">국어</th>
                         <th className="py-2 px-1 text-center font-bold text-[#232323]">영어</th>
-                        <th className="py-2 px-1 text-center font-bold text-[#232323]">수학1</th>
-                        <th className="py-2 px-1 text-center font-bold text-[#232323]">수학2</th>
+                        <th className="py-2 px-1 text-center font-bold text-[#232323]">수학</th>
                         <th className="py-2 px-1 text-center font-bold text-[#232323]">선택1</th>
                         <th className="py-2 px-1 text-center font-bold text-[#232323]">선택2</th>
                         <th className="py-2 px-1 text-center font-bold text-[#232323]">한국사</th>
@@ -104,11 +204,9 @@ export const GradeView = () => {
                       {mockExams.map((exam, index) => (
                         <tr key={index} className="border-b border-[#e7edff] hover:bg-[#f8f9ff] transition-colors">
                           <td className="py-2 px-1 text-center font-medium text-[#628af9]">{exam.month}</td>
-                          <td className="py-2 px-1 text-center text-[#232323]">{exam.korean1}</td>
-                          <td className="py-2 px-1 text-center text-[#232323]">{exam.korean2}</td>
+                          <td className="py-2 px-1 text-center text-[#232323]">{exam.korean}</td>
                           <td className="py-2 px-1 text-center text-[#232323]">{exam.english}</td>
-                          <td className="py-2 px-1 text-center text-[#232323]">{exam.math1}</td>
-                          <td className="py-2 px-1 text-center text-[#232323]">{exam.math2}</td>
+                          <td className="py-2 px-1 text-center text-[#232323]">{exam.math}</td>
                           <td className="py-2 px-1 text-center text-[#232323]">{exam.elective1}</td>
                           <td className="py-2 px-1 text-center text-[#232323]">{exam.elective2}</td>
                           <td className="py-2 px-1 text-center text-[#232323]">{exam.history}</td>
