@@ -105,6 +105,7 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
                 .email(email)
                 .gender(null)
                 .name(null)
+                .age(0)
                 .schoolId(0)
                 .schoolGrade(0)
                 .profileImgPath(profileImgPath != null ? profileImgPath : "/profile/default.jpg")
