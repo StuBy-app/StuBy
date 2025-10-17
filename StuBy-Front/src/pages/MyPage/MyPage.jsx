@@ -1,4 +1,4 @@
-// MyPage.jsx
+// src/pages/MyPage/MyPage.jsx
 import {
   CalendarIcon,
   ChevronLeftIcon,
@@ -17,7 +17,7 @@ import {
 import { Button } from "../../components/button";
 import { Card, CardContent } from "../../components/card";
 import { Separator } from "../../components/separator";
-import api from "../../api/axios"; 
+import api from "../../api/axios";
 
 const navigationItems = [
   { icon: CalendarIcon, label: "캘린더", leftIcon: "left-[50px]", leftLabel: "left-[50px]" },
@@ -30,9 +30,8 @@ const navigationItems = [
 export const MyPage = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [latestMockGrade, setLatestMockGrade] = useState(null); // 필요 시 서버 연동
+  const [latestMockGrade, setLatestMockGrade] = useState(null);
 
-  // ✅ 현재 사용자 정보 가져오기 (axios)
   useEffect(() => {
     let mounted = true;
 
@@ -41,14 +40,10 @@ export const MyPage = () => {
         const { data } = await api.get("/api/users/profile");
         if (!mounted) return;
         setUser(data);
-
-        // TODO: 성적 데이터를 서버에서 가져오면 여기서 같이 호출
-        // const grades = await api.get(`/api/grades?userId=${data.id}`);
-        // setLatestMockGrade(grades.data.at(-1) ?? null);
+        // TODO: 성적 API 연동 시 최신 성적도 여기서 set
       } catch (err) {
-        // 401/403 등 인증 이슈 → 로그인 페이지로
         if (err?.response?.status === 401 || err?.response?.status === 403) {
-          navigate("/login", { replace: true });
+          navigate("/auth/login", { replace: true }); // ✅ 통일
           return;
         }
         console.error("프로필 조회 실패:", err);
@@ -62,11 +57,11 @@ export const MyPage = () => {
   }, [navigate]);
 
   const handleEditProfile = () => {
-    navigate("/mypagemodify");
+    navigate("/mypage/edit");           // ✅ 수정
   };
   const handleBackClick = () => navigate("/home");
   const handleFollowingClick = () => navigate("/following");
-  const handleFollowerClick = () => navigate("/follower");
+  const handleFollowerClick = () => navigate("/followers"); // ✅ 수정
   const handleGradeInputClick = () => navigate("/grade/input");
   const handleGradeViewClick = () => navigate("/grade/view");
 
@@ -148,7 +143,7 @@ export const MyPage = () => {
                   팔로잉 <span className="text-[#23232366]">7명</span>
                 </button>
                 <Separator orientation="vertical" className="h-2.5 bg-[#232323]" />
-                <button onClick={handleFollowerClick} className="[font-family:'Noto_Sans_KR',Helvetica] font-medium text-[#232323] text-xs tracking-[0] leading-4 cursor-pointer">
+                <button onClick={handleFollowerClick} className="[font-family:'Noto_SANS_KR',Helvetica] font-medium text-[#232323] text-xs tracking-[0] leading-4 cursor-pointer">
                   팔로워 <span className="text-[#23232366]">5명</span>
                 </button>
               </div>
@@ -156,10 +151,10 @@ export const MyPage = () => {
 
             <Card className="w-full mt-[25px] bg-[#628af9] border-0 rounded-[10px] translate-y-[-1rem] animate-fade-in opacity-0 [--animation-delay:200ms]">
               <CardContent className="p-0 relative h-[70px]">
-                {subjects.map((subject, index) => (
+                {["국어","영어","수학","통합사회","통합과학","한국사"].map((subject, index) => (
                   <div key={index} className={`absolute top-[19px] ${subjectNamePositions[index]}`}>
                     <span className="text-[13px] [font-family:'Noto_Sans_KR',Helvetica] font-medium text-[#f8f9ff] tracking-[0] leading-4 whitespace-nowrap">
-                      {subject.name}
+                      {subject}
                     </span>
                   </div>
                 ))}
@@ -168,10 +163,10 @@ export const MyPage = () => {
                   <Separator key={index} orientation="vertical" className={`absolute top-[15px] ${position} h-10 bg-[#f8f9ff] opacity-50`} />
                 ))}
 
-                {subjects.map((subject, index) => (
+                {["국어","영어","수학","통합사회","통합과학","한국사"].map((subject, index) => (
                   <div key={index} className={`absolute top-[35px] ${subjectScorePositions[index]}`}>
                     <span className="text-[10px] [font-family:'Noto_Sans_KR',Helvetica] font-medium text-[#f8f9ff] tracking-[0] leading-4 whitespace-nowrap">
-                      {subject.score}
+                      {getSubjectScore(subject)}
                     </span>
                   </div>
                 ))}
@@ -233,25 +228,8 @@ export const MyPage = () => {
           </section>
         </div>
 
-        <nav className="absolute bottom-0 left-0 w-[480px] h-[70px] z-10 hidden">
-          <div className="absolute left-0 w-[480px] h-[70px] bg-[#f8f9ff] rounded-[15px_15px_0px_0px] shadow-[0px_-2px_2px_#23232340]" />
-
-          {navigationItems.map((item, index) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={index}
-                className="absolute top-3"
-                style={{ left: item.leftIcon.replace("left-[", "").replace("]", "") }}
-              >
-                <Icon className={`w-7 h-7 ${item.active ? "text-[#628af9]" : "text-[#2323234c]"}`} />
-                <span className={`absolute top-[33px] left-1/2 -translate-x-1/2 [font-family:'Noto_Sans_KR',Helvetica] font-bold text-[10px] tracking-[0] leading-[normal] whitespace-nowrap ${item.active ? "text-[#628af9]" : "text-[#2323234c]"}`}>
-                  {item.label}
-                </span>
-              </button>
-            );
-          })}
-        </nav>
+        {/* 하단 네비는 비활성 상태 유지 */}
+        <nav className="absolute bottom-0 left-0 w-[480px] h-[70px] z-10 hidden" />
       </main>
     </div>
   );
