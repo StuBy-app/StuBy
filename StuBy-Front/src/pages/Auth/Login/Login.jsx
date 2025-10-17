@@ -197,10 +197,10 @@ export default function Login() {
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="flex flex-col items-center pt-[20px] pb-[15px] px-0">
-              <Separator className="w-full bg-[#23232333]" />
+              
               <Button
                 onClick={() => setShowErrorDialog(false)}
-                className="font-bold text-[#628af9] text-xs [font-family:'Noto_Sans_KR',Helvetica] tracking-[0] leading-[normal] bg-transparent hover:bg-transparent shadow-none border-0 h-auto pt-3"
+                className="w-full justify-center font-bold text-[#628af9] text-xs [font-family:'Noto_Sans_KR',Helvetica] tracking-[0] leading-[normal] bg-transparent hover:bg-transparent shadow-none border-0 h-auto pt-3"
               >
                 확인
               </Button>

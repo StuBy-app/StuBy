@@ -8,20 +8,103 @@ import {
   SearchIcon,
   TrashIcon,
 } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../components/button";
 import { Card, CardContent } from "../../components/card";
 import { Input } from "../../components/input";
+import { getCurrentUser, setCurrentUser, getMockGrades } from "../../db";
+import api from "../../api/axios";
 
-const subjects = [
-  { name: "국어", myScore: 90, schoolAvg: 75, nationalAvg: 70 },
-  { name: "영어", myScore: 95, schoolAvg: 80, nationalAvg: 75 },
-  { name: "수학", myScore: 70, schoolAvg: 72, nationalAvg: 68 },
-  { name: "통합사회", myScore: 50, schoolAvg: 45, nationalAvg: 48 },
-  { name: "통합과학", myScore: 45, schoolAvg: 45, nationalAvg: 40 },
-  { name: "한국사", myScore: 65, schoolAvg: 55, nationalAvg: 60 },
-];
+/* ================= JWT / me 파싱 헬퍼 ================= */
+
+const b64urlDecode = (s) => {
+  try {
+    const pad = "=".repeat((4 - (s.length % 4)) % 4);
+    const base64 = (s + pad).replace(/-/g, "+").replace(/_/g, "/");
+    const json = atob(base64);
+    return decodeURIComponent(
+      json
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+  } catch {
+    return null;
+  }
+};
+const parseJwtPayload = (token) => {
+  if (!token) return null;
+  const parts = token.replace(/^Bearer\s+/i, "").split(".");
+  if (parts.length < 2) return null;
+  try {
+    return JSON.parse(b64urlDecode(parts[1]));
+  } catch {
+    return null;
+  }
+};
+const extractPrincipal = (resLike) => {
+  const d = resLike?.data ?? resLike;
+  const inner = d?.data ?? d?.body ?? d;
+
+  const topId = inner?.userId ?? inner?.id ?? null;
+  const topName = inner?.username ?? inner?.name ?? null;
+
+  const userLike = inner?.user ?? inner?.principal ?? inner?.account ?? null;
+
+  const nestedId =
+    userLike?.userId ??
+    userLike?.id ??
+    userLike?.user?.id ??
+    userLike?.principal?.id ??
+    null;
+
+  const nestedName =
+    userLike?.username ??
+    userLike?.name ??
+    userLike?.user?.username ??
+    userLike?.principal?.username ??
+    null;
+
+  const id = topId ?? nestedId ?? null;
+  const username = topName ?? nestedName ?? null;
+
+  return id ? { id, username: username ?? null } : null;
+};
+const ensureUserFromAnywhere = async () => {
+  const cached = getCurrentUser();
+  if (cached?.id) return cached;
+
+  try {
+    const res = await api.get("/api/account/principal");
+    const me = extractPrincipal(res);
+    if (me?.id) {
+      const fixed = { id: Number(me.id), username: me.username ?? undefined };
+      setCurrentUser(fixed);
+      return fixed;
+    }
+  } catch (e) {
+    const me = extractPrincipal(e?.response);
+    if (me?.id) {
+      const fixed = { id: Number(me.id), username: me.username ?? undefined };
+      setCurrentUser(fixed);
+      return fixed;
+    }
+  }
+
+  const ls = localStorage.getItem("AccessToken");
+  const payload = parseJwtPayload(ls);
+  const uid = payload?.userId ?? payload?.id ?? null;
+  const username = payload?.username ?? payload?.sub ?? undefined;
+
+  if (uid != null) {
+    const fixed = { id: Number(uid), username };
+    setCurrentUser(fixed);
+    return fixed;
+  }
+  return null;
+};
+/* ===================================================== */
 
 const navItems = [
   { icon: CalendarIcon, label: "캘린더", active: false },
@@ -33,6 +116,17 @@ const navItems = [
 
 export const Home = () => {
   const navigate = useNavigate();
+
+  // ✅ 대시보드에 표시할 과목 막대들 (내 점수만 동적, 평균은 더미값 유지/향후 API 연동)
+  const [subjects, setSubjects] = useState([
+    { name: "국어", myScore: 0, schoolAvg: 75, nationalAvg: 70 },
+    { name: "영어", myScore: 0, schoolAvg: 80, nationalAvg: 75 },
+    { name: "수학", myScore: 0, schoolAvg: 72, nationalAvg: 68 },
+    { name: "통합사회", myScore: 0, schoolAvg: 45, nationalAvg: 48 },
+    { name: "통합과학", myScore: 0, schoolAvg: 45, nationalAvg: 40 },
+    { name: "한국사", myScore: 0, schoolAvg: 55, nationalAvg: 60 },
+  ]);
+
   const [tasks, setTasks] = useState([
     { id: 1, subject: "수학", description: "미적분까지 복습하기", completed: false },
     { id: 2, subject: "과목", description: "복습할 내용 작성", completed: false },
@@ -44,9 +138,31 @@ export const Home = () => {
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
 
-  const handleProfileClick = () => {
-    navigate("/mypage");
-  };
+  // ✅ 마운트 시 최신 모의고사 점수로 대시보드 업데이트
+  useEffect(() => {
+    (async () => {
+      const me = await ensureUserFromAnywhere();
+      if (!me?.id) return;
+
+      const list = getMockGrades(Number(me.id));
+      const latest = list.length ? list[list.length - 1] : null;
+
+      if (!latest) return;
+
+      // 과목별로 내 점수 계산
+      const next = [
+        { name: "국어", myScore: (latest.korean ?? 0), schoolAvg: 75, nationalAvg: 70 },
+        { name: "영어", myScore: latest.english ?? 0, schoolAvg: 80, nationalAvg: 75 },
+        { name: "수학", myScore: (latest.math ?? 0), schoolAvg: 72, nationalAvg: 68 },
+        { name: "통합사회", myScore: latest.elective1 ?? 0, schoolAvg: 45, nationalAvg: 48 },
+        { name: "통합과학", myScore: latest.elective2 ?? 0, schoolAvg: 45, nationalAvg: 40 },
+        { name: "한국사", myScore: latest.history ?? 0, schoolAvg: 55, nationalAvg: 60 },
+      ];
+      setSubjects(next);
+    })();
+  }, []);
+
+  const handleProfileClick = () => navigate("/mypage");
 
   const toggleTaskCompletion = (taskId) => {
     setTasks((prevTasks) => {
@@ -68,16 +184,12 @@ export const Home = () => {
     setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
   };
-  const handleTouchMove = (e) => {
-    setTouchEnd(e.targetTouches[0].clientX);
-  };
+  const handleTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
   const handleTouchEnd = (taskId) => {
     if (touchStart === null || touchEnd === null) return;
     const distance = touchStart - touchEnd;
-    const isLeft = distance > 50;
-    const isRight = distance < -50;
-    if (isLeft) setSwipedTaskId(taskId);
-    else if (isRight) setSwipedTaskId(null);
+    if (distance > 50) setSwipedTaskId(taskId);
+    else if (distance < -50) setSwipedTaskId(null);
   };
 
   const handleMouseDown = (e) => {
@@ -93,10 +205,8 @@ export const Home = () => {
       return;
     }
     const distance = touchStart - touchEnd;
-    const isLeft = distance > 50;
-    const isRight = distance < -50;
-    if (isLeft) setSwipedTaskId(taskId);
-    else if (isRight) setSwipedTaskId(null);
+    if (distance > 50) setSwipedTaskId(taskId);
+    else if (distance < -50) setSwipedTaskId(null);
     setTouchStart(null);
     setTouchEnd(null);
   };
@@ -143,12 +253,12 @@ export const Home = () => {
             </h1>
             <p className="font-normal text-[#000000] text-xs [font-family:'Noto_Sans_KR',Helvetica] tracking-[0] leading-[normal]">
               <span>다음 모의고사까지 </span>
-              <span className="font-bold">105일</span>
+              <span className="font-bold">-</span>
               <span> 남았습니다!</span>
             </p>
             <p className="font-normal text-[#000000] text-xs [font-family:'Noto_Sans_KR',Helvetica] tracking-[0] leading-[normal]">
               <span>수능까지 </span>
-              <span className="font-bold">200일</span>
+              <span className="font-bold">26일</span>
               <span> 남았습니다!</span>
             </p>
           </section>
@@ -161,6 +271,7 @@ export const Home = () => {
             />
           </div>
 
+          {/* 투두 카드 */}
           <Card className="w-full bg-white rounded-[10px] border-0 shadow-none opacity-0 translate-y-[-1rem] animate-fade-in [--animation-delay:400ms]">
             <CardContent className="p-0">
               <div className="pt-[25px] px-[35px] pb-[25px]">
@@ -168,7 +279,7 @@ export const Home = () => {
                   오늘
                 </h2>
                 <p className="mt-[19px] font-normal text-[#232323] text-[8px] [font-family:'Noto_Sans_KR',Helvetica] tracking-[0] leading-[normal]">
-                  2025. 10. 05 일요일
+                  2025. 10. 18 토요일
                 </p>
 
                 <img
@@ -244,7 +355,7 @@ export const Home = () => {
                         placeholder="할 일 내용"
                         value={newTaskDescription}
                         onChange={(e) => setNewTaskDescription(e.target.value)}
-                        className="h-[30px] text-[10px] [font-family:'Noto_SANS_KR',Helvetica] border-[#628af9]"
+                        className="h-[30px] text-[10px] [font-family:'Noto_Sans_KR',Helvetica] border-[#628af9]"
                       />
                       <div className="flex gap-2">
                         <Button
@@ -280,6 +391,7 @@ export const Home = () => {
             </CardContent>
           </Card>
 
+          {/* 성적 대시보드 카드 */}
           <Card className="w-full bg-white rounded-[10px] border-0 shadow-none opacity-0 translate-y-[-1rem] animate-fade-in [--animation-delay:600ms]">
             <CardContent className="p-0">
               <div className="pt-5 px-[31px] pb-5">
@@ -310,10 +422,10 @@ export const Home = () => {
 
                 <div className="mt-[21px] relative h-[189px]">
                   <div className="absolute left-0 top-0 bottom-[25px] flex flex-col justify-between text-right pr-[6px]">
-                    <span className="[font-family:'Noto_Sans_KR',Helvetica] font-normal text-[#23232380] text-[11px] tracking-[0] leading-[normal]">100</span>
-                    <span className="[font-family:'Noto_Sans_KR',Helvetica] font-normal text-[#23232380] text-[11px] tracking-[0] leading-[normal]">75</span>
-                    <span className="[font-family:'Noto_Sans_KR',Helvetica] font-normal text-[#23232380] text-[11px] tracking-[0] leading-[normal]">50</span>
-                    <span className="[font-family:'Noto_Sans_KR',Helvetica] font-normal text-[#23232380] text-[11px] tracking-[0] leading-[normal]">25</span>
+                    <span className="[font-family:'Noto_Sans_KR',Helvetica] font-normal text-[#23232380] text-[11px]">100</span>
+                    <span className="[font-family:'Noto_Sans_KR',Helvetica] font-normal text-[#23232380] text-[11px]">75</span>
+                    <span className="[font-family:'Noto_Sans_KR',Helvetica] font-normal text-[#23232380] text-[11px]">50</span>
+                    <span className="[font-family:'Noto_Sans_KR',Helvetica] font-normal text-[#23232380] text-[11px]">25</span>
                   </div>
 
                   <div className="absolute left-[37px] right-0 top-0 bottom-[25px] flex flex-col justify-between">
@@ -330,9 +442,18 @@ export const Home = () => {
                   <div className="absolute left-[37px] right-0 top-0 bottom-[25px] flex items-end justify-between px-[31px]">
                     {subjects.map((subject, index) => (
                       <div key={index} className="flex gap-[2px] items-end">
-                        <div className="w-2.5 bg-[#628af9]" style={{ height: `${(subject.myScore / 100) * 173}px` }} />
-                        <div className="w-2.5 bg-[#ff9d89]" style={{ height: `${(subject.schoolAvg / 100) * 173}px` }} />
-                        <div className="w-2.5 bg-[#dedede]" style={{ height: `${(subject.nationalAvg / 100) * 173}px` }} />
+                        <div
+                          className="w-2.5 bg-[#628af9]"
+                          style={{ height: `${Math.max(0, Math.min(100, subject.myScore)) / 100 * 173}px` }}
+                        />
+                        <div
+                          className="w-2.5 bg-[#ff9d89]"
+                          style={{ height: `${Math.max(0, Math.min(100, subject.schoolAvg)) / 100 * 173}px` }}
+                        />
+                        <div
+                          className="w-2.5 bg-[#dedede]"
+                          style={{ height: `${Math.max(0, Math.min(100, subject.nationalAvg)) / 100 * 173}px` }}
+                        />
                       </div>
                     ))}
                   </div>
@@ -341,7 +462,7 @@ export const Home = () => {
 
                   <div className="absolute left-[37px] right-0 bottom-0 flex justify-between px-[4px] pt-[6px]">
                     {subjects.map((subject, index) => (
-                      <span key={index} className="font-bold text-[#232323cc] text-[11px] [font-family:'Noto_Sans_KR',Helvetica] tracking-[0] leading-[normal]">
+                      <span key={index} className="font-bold text-[#232323cc] text-[11px] [font-family:'Noto_Sans_KR',Helvetica]">
                         {subject.name}
                       </span>
                     ))}
@@ -357,7 +478,7 @@ export const Home = () => {
             {navItems.map((item, index) => (
               <button key={index} className="h-auto flex flex-col items-center gap-[5px]">
                 <item.icon className={`w-7 h-7 ${item.active ? "text-[#628af9] fill-[#628af9]" : "text-[#2323234c]"}`} />
-                <span className={`font-bold text-[10px] [font-family:'Noto_Sans_KR',Helvetica] tracking-[0] leading-[normal] ${item.active ? "text-[#628af9]" : "text-[#2323234c]"}`}>
+                <span className={`font-bold text-[10px] [font-family:'Noto_Sans_KR',Helvetica] ${item.active ? "text-[#628af9]" : "text-[#2323234c]"}`}>
                   {item.label}
                 </span>
               </button>
