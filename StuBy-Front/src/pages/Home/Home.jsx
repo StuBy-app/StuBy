@@ -439,9 +439,9 @@ export const Home = () => {
                     ))}
                   </div>
 
-                  <div className="absolute left-[37px] right-0 top-0 bottom-[25px] flex items-end justify-between px-[31px]">
+                  <div className="absolute left-[37px] right-0 top-0 bottom-[25px] flex items-end justify-between px-[5px]">
                     {subjects.map((subject, index) => (
-                      <div key={index} className="flex gap-[2px] items-end">
+                      <div key={index} className="flex gap-[1px] items-end">
                         <div
                           className="w-2.5 bg-[#628af9]"
                           style={{ height: `${Math.max(0, Math.min(100, subject.myScore)) / 100 * 173}px` }}
@@ -458,7 +458,7 @@ export const Home = () => {
                     ))}
                   </div>
 
-                  <div className="absolute left-[37px] right-0 bottom-0 h-px bg-[#23232380]" />
+                  {/* <div className="absolute left-[37px] right-0 bottom-0 h-px bg-[#23232380]" /> */}
 
                   <div className="absolute left-[37px] right-0 bottom-0 flex justify-between px-[4px] pt-[6px]">
                     {subjects.map((subject, index) => (
