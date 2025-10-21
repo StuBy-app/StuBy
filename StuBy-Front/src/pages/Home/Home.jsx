@@ -9,7 +9,7 @@ import {
   TrashIcon,
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "../../components/button";
 import { Card, CardContent } from "../../components/card";
 import { Input } from "../../components/input";
@@ -107,15 +107,16 @@ const ensureUserFromAnywhere = async () => {
 /* ===================================================== */
 
 const navItems = [
-  { icon: CalendarIcon, label: "캘린더", active: false },
-  { icon: ClockIcon, label: "공부시간", active: false },
-  { icon: HomeIcon, label: "홈", active: true },
-  { icon: PieChartIcon, label: "정보", active: false },
-  { icon: MessageCircleIcon, label: "AI 버디", active: false },
+  { icon: CalendarIcon, label: "캘린더", path: "/calendar" },
+  { icon: ClockIcon,   label: "공부시간", path: "/studytime" },
+  { icon: HomeIcon,    label: "홈",     path: "/home" },
+  { icon: PieChartIcon,label: "정보",   path: "/info" },
+  { icon: MessageCircleIcon, label: "AI 버디", path: "/aibuddy" },
 ];
 
 export const Home = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   // ✅ 대시보드에 표시할 과목 막대들 (내 점수만 동적, 평균은 더미값 유지/향후 API 연동)
   const [subjects, setSubjects] = useState([
@@ -475,14 +476,22 @@ export const Home = () => {
 
         <nav className="w-[480px] h-[70px] bg-[#f8f9ff] rounded-[15px_15px_0px_0px] shadow-[0px_-2px_8px_#2323231a] flex-shrink-0">
           <div className="h-full flex items-start justify-around pt-3">
-            {navItems.map((item, index) => (
-              <button key={index} className="h-auto flex flex-col items-center gap-[5px]">
-                <item.icon className={`w-7 h-7 ${item.active ? "text-[#628af9] fill-[#628af9]" : "text-[#2323234c]"}`} />
-                <span className={`font-bold text-[10px] [font-family:'Noto_Sans_KR',Helvetica] ${item.active ? "text-[#628af9]" : "text-[#2323234c]"}`}>
-                  {item.label}
-                </span>
+            {navItems.map((item, index) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <button
+                  key={index}
+                  onClick={() => navigate(item.path)}
+                  className="h-auto flex flex-col items-center gap-[5px]"
+                  aria-label={item.label}
+                >
+              <item.icon className={`w-7 h-7 ${isActive ? "text-[#628af9] fill-[#628af9]" : "text-[#2323234c]"}`} />
+              <span className={`font-bold text-[10px] [font-family:'Noto_Sans_KR',Helvetica] ${isActive ? "text-[#628af9]" : "text-[#2323234c]"}`}>
+              {item.label}
+              </span>
               </button>
-            ))}
+              );
+            })}
           </div>
         </nav>
       </div>
