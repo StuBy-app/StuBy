@@ -107,7 +107,7 @@ const ensureUserFromAnywhere = async () => {
 /* ===================================================== */
 
 const navItems = [
-  { icon: CalendarIcon, label: "캘린더", path: "/calendar" },
+  { icon: CalendarIcon, label: "캘린더", path: "/todolist" },
   { icon: ClockIcon,   label: "공부시간", path: "/studytime" },
   { icon: HomeIcon,    label: "홈",     path: "/home" },
   { icon: PieChartIcon,label: "정보",   path: "/info" },

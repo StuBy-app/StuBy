@@ -11,6 +11,8 @@ import GradeInput from "../pages/Grade/GradeInput.jsx";
 import GradeView from "../pages/Grade/GradeView.jsx";
 import StudyTime from "../pages/StudyTime/StudyTime.jsx";
 import Ranking from "../pages/StudyTime/Ranking.jsx";
+import TodoList from "../pages/TodoList/TodoList.jsx";
+import Calendar from "../pages/TodoList/Calendar.jsx";
 
 
 const NotFound = () => <div style={{ padding: 24 }}>페이지를 찾을 수 없어요 😢</div>;
@@ -31,9 +33,12 @@ export default function UserRouter() {
         <Route path="grade/input" element={<GradeInput />} />
         <Route path="grade/view" element={<GradeView />} />
 
-        {/* StudyTime */}
         <Route path="studytime" element={<StudyTime />} />
         <Route path="studytime/ranking" element={<Ranking />} />
+
+        <Route path="todolist" element={<TodoList />} />
+        <Route path="calendar" element={<Calendar />} />
+        <Route path="calendar/:friendId" element={<Calendar />} />
 
         <Route path="404" element={<NotFound />} />
         <Route path="*" element={<Navigate to="/404" replace />} />
