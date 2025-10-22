@@ -370,3 +370,72 @@ export const getRankingData = (userId, date, category) => {
   // 현재는 더미 데이터를 그대로 반환.
   return dataForDate[category] || [];
 };
+
+/* ========================================================================
+   아래부터는 애니마 구현에 필요한 '팔로잉/투두' 기능을 "추가"한 부분
+   (기존 코드 수정 없음)
+   ======================================================================== */
+
+// tomorrow 상수 추가 (기존 today를 활용)
+const tomorrow = new Date(today);
+tomorrow.setDate(today.getDate() + 1);
+
+// 팔로잉 유저 더미 데이터
+let followingUsers = [
+  { id: "f1", name: "강미경", avatar: "https://c.animaapp.com/mghllw7nnesCnv/img/ellipse-10-1.png" },
+  { id: "f2", name: "노소정", avatar: "https://c.animaapp.com/mghllw7nnesCnv/img/ellipse-11-1.png" },
+  { id: "f3", name: "이수원", avatar: "https://c.animaapp.com/mghllw7nnesCnv/img/ellipse-12-1.png" },
+  { id: "f4", name: "김지현", avatar: "https://c.animaapp.com/mghllw7nnesCnv/img/ellipse-13-1.png" },
+  { id: "f5", name: "최재원", avatar: "https://c.animaapp.com/mghllw7nnesCnv/img/ellipse-14-1.png" },
+];
+
+// 투두 더미 데이터
+let todos = [
+  { id: 1, userId: 1, subject: "수학", note: "미적분까지 복습하기", done: false, date: formatDateToYYYYMMDD(today) },
+  { id: 2, userId: 1, subject: "과목", note: "복습할 내용 작성", done: true,  date: formatDateToYYYYMMDD(today) },
+  { id: 3, userId: 1, subject: "영어", note: "단어 50개 암기",     done: false, date: formatDateToYYYYMMDD(tomorrow) },
+];
+let nextTodoId = todos.length > 0 ? Math.max(...todos.map((t) => t.id)) + 1 : 1;
+
+// 팔로잉/투두 API
+export const getFollowingUsers = (userId) => {
+  // 실제로는 userId 기반 필터링을 적용
+  return followingUsers;
+};
+
+export const getTodos = (userId) => {
+  return todos.filter((todo) => todo.userId === userId);
+};
+
+export const getTodosByDate = (userId, dateString) => {
+  return todos.filter((todo) => todo.userId === userId && todo.date === dateString);
+};
+
+export const addTodo = (userId, todoData) => {
+  const newTodo = { ...todoData, id: nextTodoId++, userId };
+  todos.push(newTodo);
+  console.log("Todo added:", newTodo);
+  return newTodo;
+};
+
+export const updateTodo = (userId, updatedTodo) => {
+  const idx = todos.findIndex((t) => t.id === updatedTodo.id && t.userId === userId);
+  if (idx > -1) {
+    todos[idx] = { ...updatedTodo };
+    console.log("Todo updated:", todos[idx]);
+    return todos[idx];
+  }
+  console.log("Todo not found for update.");
+  return null;
+};
+
+export const deleteTodo = (userId, todoId) => {
+  const initialLength = todos.length;
+  todos = todos.filter((t) => !(t.id === todoId && t.userId === userId));
+  if (todos.length < initialLength) {
+    console.log("Todo deleted:", todoId);
+    return true;
+  }
+  console.log("Todo not found for deletion.");
+  return false;
+};

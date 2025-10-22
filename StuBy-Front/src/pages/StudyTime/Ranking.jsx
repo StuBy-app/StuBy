@@ -77,9 +77,9 @@ export default function Ranking() {
   const restOfList = rankingList.slice(3);
 
   const navItems = [
-    { icon: CalendarIcon, label: "캘린더", active: false, path: "/calendar" },
+    { icon: CalendarIcon, label: "캘린더", active: false, path: "/todolist" },
     { icon: ClockIcon, label: "공부시간", active: true, path: "/studytime" },
-    { icon: HomeIcon, label: "홈", active: false, path: "/u4370u4457u4535" },
+    { icon: HomeIcon, label: "홈", active: false, path: "/home" },
     { icon: PieChartIcon, label: "정보", active: false, path: "/info" },
     { icon: MessageCircleIcon, label: "AI 버디", active: false, path: "/aibuddy" },
   ];

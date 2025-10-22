@@ -119,9 +119,9 @@ export const StudyTime = () => {
     };
   }, [timers]);
 
-  const handleBackClick = () => navigate("/u4370u4457u4535");
+  const handleBackClick = () => navigate("/home");
   const handleProfileClick = () =>
-    navigate("/u4358u4449u4363u4469u4369u4454u4363u4469u4364u4469");
+    navigate("/mypage");
 
   const scrollCarousel = (direction) => {
     if (!carouselRef.current) return;
@@ -391,7 +391,9 @@ export const StudyTime = () => {
         {/* 하단 네비게이션 */}
         <nav className="w-[480px] h-[70px] bg-[#f8f9ff] rounded-[15px_15px_0px_0px] shadow-[0px_-2px_8px_#2323231a] flex-shrink-0">
           <div className="h-full flex items-start justify-around pt-3">
-            <button className="h-auto flex flex-col items-center gap-[5px]">
+            <button 
+              onClick={() => navigate("/todolist")}
+              className="h-auto flex flex-col items-center gap-[5px]">
               <CalendarIcon className="w-7 h-7 text-[#2323234c]" />
               <span className="font-bold text-[10px] [font-family:'Noto_Sans_KR',Helvetica] tracking-[0] leading-[normal] text-[#2323234c]">
                 캘린더
@@ -404,7 +406,7 @@ export const StudyTime = () => {
               </span>
             </button>
             <button
-              onClick={() => navigate("/u4370u4457u4535")}
+              onClick={() => navigate("/home")}
               className="h-auto flex flex-col items-center gap-[5px]"
             >
               <HomeIcon className="w-7 h-7 text-[#2323234c]" />
