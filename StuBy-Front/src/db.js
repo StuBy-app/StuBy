@@ -366,8 +366,6 @@ export const getRankingData = (userId, date, category) => {
   // date: "YYYY-MM-DD", category: "personal" | "groups" | "friends"
   const dataForDate = rankingData.find((d) => d.date === date);
   if (!dataForDate) return [];
-  // 실제 구현에서는 userId로 개인/그룹/친구 영역을 필터링해야 하지만,
-  // 현재는 더미 데이터를 그대로 반환.
   return dataForDate[category] || [];
 };
 
@@ -399,7 +397,6 @@ let nextTodoId = todos.length > 0 ? Math.max(...todos.map((t) => t.id)) + 1 : 1;
 
 // 팔로잉/투두 API
 export const getFollowingUsers = (userId) => {
-  // 실제로는 userId 기반 필터링을 적용
   return followingUsers;
 };
 
@@ -439,3 +436,115 @@ export const deleteTodo = (userId, todoId) => {
   console.log("Todo not found for deletion.");
   return false;
 };
+
+/* ========================================================================
+   ⬇⬇⬇ 여기서부터 "추가"된 부분: UniversityInfo (수능/모의고사 연동)
+   ======================================================================== */
+
+// University Info (모의고사/검정고시/수능 날짜 포함)
+const universityInfoData = {
+  page: {
+    title: "D-day",
+    subtitle: "다음 모의고사까지 105일 남았습니다! 수능까지 200일 남았습니다!",
+    selectedUniversityId: "snu",
+  },
+  universities: [
+    {
+      id: "snu",
+      name: "서울대학교",
+      logoUrl: "https://c.animaapp.com/mghllw7nnesCnv/img/seouldaehaggyo.png",
+      location: { address: "서울특별시 관악구 관악로 1", lat: 37.459882, lng: 126.950566 },
+      admissions: {
+        early: {
+          competitionRate: 9.07,
+          applicationPeriod: { start: "2025-09-01", end: "2025-09-07" },
+          notes: "서류 위주 전형, 일정은 학과별 상이할 수 있음",
+        },
+        regular: {
+          competitionRate: 3.02,
+          applicationPeriod: { start: "2025-12-28", end: "2026-01-03" },
+          notes: "수능 위주 전형",
+        },
+      },
+      keywords: ["서울대", "SNU", "서울대학교"],
+    },
+    {
+      id: "pnu",
+      name: "부산대학교",
+      logoUrl: "https://c.animaapp.com/mghllw7nnesCnv/img/busandaehaggyo.png",
+      location: { address: "부산광역시 금정구 부산대학로 63번길 2", lat: 35.232226, lng: 129.082889 },
+      admissions: {
+        early: {
+          competitionRate: 8.11,
+          applicationPeriod: { start: "2025-09-02", end: "2025-09-08" },
+          notes: "",
+        },
+        regular: {
+          competitionRate: 3.52,
+          applicationPeriod: { start: "2025-12-29", end: "2026-01-04" },
+          notes: "",
+        },
+      },
+      keywords: ["부산대", "PNU", "부산대학교"],
+    },
+    {
+      id: "knu",
+      name: "경북대학교",
+      logoUrl: "https://c.animaapp.com/mghllw7nnesCnv/img/gyeongbugdaehaggyo.jpg",
+      location: { address: "대구광역시 북구 대학로 80", lat: 35.888521, lng: 128.610699 },
+      admissions: {
+        early: {
+          competitionRate: 8.37,
+          applicationPeriod: { start: "2025-09-03", end: "2025-09-09" },
+          notes: "",
+        },
+        regular: {
+          competitionRate: 3.51,
+          applicationPeriod: { start: "2025-12-30", end: "2026-01-05" },
+          notes: "",
+        },
+      },
+      keywords: ["경북대", "KNU", "경북대학교"],
+    },
+  ],
+  exams: {
+    mock2025: [
+      { month: 3,  name: "3월 학력평가", date: "2025-03-26" },
+      { month: 5,  name: "5월 모의고사", date: "2025-05-08" },
+      { month: 6,  name: "6월 모의평가", date: "2025-06-04" },
+      { month: 7,  name: "7월 모의고사", date: "2025-07-09" },
+      { month: 9,  name: "9월 모의평가", date: "2025-09-03" },
+      { month: 10, name: "10월 모의고사", date: "2025-10-14" },
+    ],
+    ged2025: [
+      {
+        session: 1,
+        name: "2025년 검정고시 1회",
+        schedule: [
+          { label: "원서접수", start: "2025-02-10", end: "2025-02-21" },
+          { label: "시험일",   start: "2025-04-13", end: "2025-04-13" },
+          { label: "합격자발표", start: "2025-05-09", end: "2025-05-09" },
+        ],
+      },
+      {
+        session: 2,
+        name: "2025년 검정고시 2회",
+        schedule: [
+          { label: "원서접수", start: "2025-06-16", end: "2025-06-20" },
+          { label: "시험일",   start: "2025-08-10", end: "2025-08-10" },
+          { label: "합격자발표", start: "2025-09-05", end: "2025-09-05" },
+        ],
+      },
+    ],
+    reference: {
+      nextImportantDate: "2025-03-26", // (선택) 예시 값
+      suneungDate: "2025-11-13",       // ✅ 실제 수능 D-day 계산용
+    },
+  },
+};
+
+// UniversityInfo 화면에서 호출
+export const getUniversityInfoData = () => universityInfoData;
+
+// 필요한 경우 헬퍼도 export 할 수 있음
+export { formatDateToYYYYMMDD };

@@ -13,7 +13,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "../../components/button";
 import { Card, CardContent } from "../../components/card";
 import { Input } from "../../components/input";
-import { getCurrentUser, setCurrentUser, getMockGrades } from "../../db";
+import { getCurrentUser, setCurrentUser, getMockGrades, getUniversityInfoData } from "../../db";
 import api from "../../api/axios";
 
 /* ================= JWT / me 파싱 헬퍼 ================= */
@@ -109,14 +109,41 @@ const ensureUserFromAnywhere = async () => {
 const navItems = [
   { icon: CalendarIcon, label: "캘린더", path: "/todolist" },
   { icon: ClockIcon,   label: "공부시간", path: "/studytime" },
-  { icon: HomeIcon,    label: "홈",     path: "/home" },
-  { icon: PieChartIcon,label: "정보",   path: "/info" },
+  { icon: HomeIcon,    label: "홈",       path: "/home" },
+  { icon: PieChartIcon,label: "정보",     path: "/info" },
   { icon: MessageCircleIcon, label: "AI 버디", path: "/aibuddy" },
 ];
+
+/* ================= D-day 헬퍼 ================= */
+const toMidnight = (d) => {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+};
+const daysUntil = (dateStr) => {
+  if (!dateStr) return null;
+  const today = toMidnight(new Date());
+  const target = toMidnight(new Date(dateStr));
+  const diff = target.getTime() - today.getTime();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+};
+const getNextMockDate = (mockList = []) => {
+  const todayMs = toMidnight(new Date()).getTime();
+  const upcoming = mockList
+    .map((m) => toMidnight(new Date(m.date)))
+    .filter((d) => d.getTime() >= todayMs)
+    .sort((a, b) => a - b);
+  return upcoming.length ? upcoming[0].toISOString().slice(0, 10) : null;
+};
+/* ============================================== */
 
 export const Home = () => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  // ✅ D-day 상태
+  const [dDayNextExam, setDDayNextExam] = useState(null);
+  const [dDaySuneung, setDDaySuneung] = useState(null);
 
   // ✅ 대시보드에 표시할 과목 막대들 (내 점수만 동적, 평균은 더미값 유지/향후 API 연동)
   const [subjects, setSubjects] = useState([
@@ -139,27 +166,40 @@ export const Home = () => {
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
 
-  // ✅ 마운트 시 최신 모의고사 점수로 대시보드 업데이트
+  // ✅ 마운트 시 사용자/성적/디데이 세팅
   useEffect(() => {
     (async () => {
       const me = await ensureUserFromAnywhere();
-      if (!me?.id) return;
 
-      const list = getMockGrades(Number(me.id));
-      const latest = list.length ? list[list.length - 1] : null;
+      // 1) 모의고사/수능 D-day 세팅 (DB의 UniversityInfo 데이터 기반)
+      try {
+        const uinfo = getUniversityInfoData?.() ?? null;
+        const nextMock = getNextMockDate(uinfo?.exams?.mock2025 || []);
+        setDDayNextExam(nextMock ? daysUntil(nextMock) : null);
 
-      if (!latest) return;
+        const suneung = uinfo?.exams?.reference?.suneungDate || null;
+        setDDaySuneung(suneung ? daysUntil(suneung) : null);
+      } catch {
+        setDDayNextExam(null);
+        setDDaySuneung(null);
+      }
 
-      // 과목별로 내 점수 계산
-      const next = [
-        { name: "국어", myScore: (latest.korean ?? 0), schoolAvg: 75, nationalAvg: 70 },
-        { name: "영어", myScore: latest.english ?? 0, schoolAvg: 80, nationalAvg: 75 },
-        { name: "수학", myScore: (latest.math ?? 0), schoolAvg: 72, nationalAvg: 68 },
-        { name: "통합사회", myScore: latest.elective1 ?? 0, schoolAvg: 45, nationalAvg: 48 },
-        { name: "통합과학", myScore: latest.elective2 ?? 0, schoolAvg: 45, nationalAvg: 40 },
-        { name: "한국사", myScore: latest.history ?? 0, schoolAvg: 55, nationalAvg: 60 },
-      ];
-      setSubjects(next);
+      // 2) 최신 모의고사 점수로 대시보드 업데이트
+      if (me?.id) {
+        const list = getMockGrades(Number(me.id));
+        const latest = list.length ? list[list.length - 1] : null;
+        if (latest) {
+          const next = [
+            { name: "국어",   myScore: latest.korean  ?? latest.korean1 ?? 0, schoolAvg: 75, nationalAvg: 70 },
+            { name: "영어",   myScore: latest.english ?? 0,               schoolAvg: 80, nationalAvg: 75 },
+            { name: "수학",   myScore: latest.math    ?? latest.math1   ?? 0, schoolAvg: 72, nationalAvg: 68 },
+            { name: "통합사회", myScore: latest.elective1 ?? 0,           schoolAvg: 45, nationalAvg: 48 },
+            { name: "통합과학", myScore: latest.elective2 ?? 0,           schoolAvg: 45, nationalAvg: 40 },
+            { name: "한국사", myScore: latest.history ?? 0,              schoolAvg: 55, nationalAvg: 60 },
+          ];
+          setSubjects(next);
+        }
+      }
     })();
   }, []);
 
@@ -248,18 +288,23 @@ export const Home = () => {
         </header>
 
         <main className="flex-1 overflow-y-auto scrollbar-hide px-[25px] pt-[16px] pb-[20px] flex flex-col gap-[15px]">
+          {/* D-day */}
           <section className="flex flex-col items-center gap-2 opacity-0 translate-y-[-1rem] animate-fade-in [--animation-delay:0ms]">
             <h1 className="[font-family:'Noto_Sans_KR',Helvetica] font-black text-[#628af9] text-[40px] tracking-[0] leading-[normal]">
               D-day
             </h1>
             <p className="font-normal text-[#000000] text-xs [font-family:'Noto_Sans_KR',Helvetica] tracking-[0] leading-[normal]">
               <span>다음 모의고사까지 </span>
-              <span className="font-bold">-</span>
+              <span className="font-bold">
+                {dDayNextExam !== null ? `${dDayNextExam}일` : "-일"}
+              </span>
               <span> 남았습니다!</span>
             </p>
             <p className="font-normal text-[#000000] text-xs [font-family:'Noto_Sans_KR',Helvetica] tracking-[0] leading-[normal]">
               <span>수능까지 </span>
-              <span className="font-bold">26일</span>
+              <span className="font-bold">
+                {dDaySuneung !== null ? `${dDaySuneung}일` : "-일"}
+              </span>
               <span> 남았습니다!</span>
             </p>
           </section>
@@ -459,8 +504,6 @@ export const Home = () => {
                     ))}
                   </div>
 
-                  {/* <div className="absolute left-[37px] right-0 bottom-0 h-px bg-[#23232380]" /> */}
-
                   <div className="absolute left-[37px] right-0 bottom-0 flex justify-between px-[4px] pt-[6px]">
                     {subjects.map((subject, index) => (
                       <span key={index} className="font-bold text-[#232323cc] text-[11px] [font-family:'Noto_Sans_KR',Helvetica]">
@@ -485,11 +528,11 @@ export const Home = () => {
                   className="h-auto flex flex-col items-center gap-[5px]"
                   aria-label={item.label}
                 >
-              <item.icon className={`w-7 h-7 ${isActive ? "text-[#628af9] fill-[#628af9]" : "text-[#2323234c]"}`} />
-              <span className={`font-bold text-[10px] [font-family:'Noto_Sans_KR',Helvetica] ${isActive ? "text-[#628af9]" : "text-[#2323234c]"}`}>
-              {item.label}
-              </span>
-              </button>
+                  <item.icon className={`w-7 h-7 ${isActive ? "text-[#628af9] fill-[#628af9]" : "text-[#2323234c]"}`} />
+                  <span className={`font-bold text-[10px] [font-family:'Noto_Sans_KR',Helvetica] ${isActive ? "text-[#628af9]" : "text-[#2323234c]"}`}>
+                    {item.label}
+                  </span>
+                </button>
               );
             })}
           </div>
