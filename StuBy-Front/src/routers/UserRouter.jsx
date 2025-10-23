@@ -14,6 +14,7 @@ import Ranking from "../pages/StudyTime/Ranking.jsx";
 import TodoList from "../pages/TodoList/TodoList.jsx";
 import Calendar from "../pages/TodoList/Calendar.jsx";
 import UniversityInfo from "../pages/UniversityInfo/UniversityInfo.jsx";
+import AIBuddy  from "../pages/AIBuddy/AIBuddy.jsx";
 
 
 const NotFound = () => <div style={{ padding: 24 }}>페이지를 찾을 수 없어요 😢</div>;
@@ -42,6 +43,8 @@ export default function UserRouter() {
         <Route path="calendar/:friendId" element={<Calendar />} />
 
         <Route path="info" element={<UniversityInfo />} />
+
+        <Route path="aibuddy" element={<AIBuddy />} />
 
         <Route path="404" element={<NotFound />} />
         <Route path="*" element={<Navigate to="/404" replace />} />

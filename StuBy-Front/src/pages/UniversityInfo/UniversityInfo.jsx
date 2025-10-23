@@ -23,23 +23,26 @@ const navItems = [
 ];
 
 const calculateDday = (targetDateString) => {
+  if (!targetDateString) return null;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const targetDate = new Date(targetDateString);
+  if (isNaN(targetDate.getTime())) return null;
   targetDate.setHours(0, 0, 0, 0);
   const diffTime = targetDate.getTime() - today.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays;
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 };
 
 const formatDate = (dateString) => {
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "";
   return date.toLocaleDateString("ko-KR", { month: "numeric", day: "numeric" });
 };
 
 const formatFullDateRange = (start, end) => {
   const startDate = new Date(start);
   const endDate = new Date(end);
+  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return "";
   return `${startDate.getFullYear()}. ${startDate.getMonth() + 1}. ${startDate.getDate()} ~ ${endDate.getFullYear()}. ${endDate.getMonth() + 1}. ${endDate.getDate()}`;
 };
 
@@ -51,7 +54,6 @@ export default function UniversityInfo() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredUniversities, setFilteredUniversities] = useState([]);
   const [selectedUniversity, setSelectedUniversity] = useState(null);
-  const [dDayNextExam, setDDayNextExam] = useState(null);
   const [dDaySuneung, setDDaySuneung] = useState(null);
 
   useEffect(() => {
@@ -59,17 +61,18 @@ export default function UniversityInfo() {
     setUniversityData(data.universities);
     setExamsData(data.exams);
 
-    if (data.page.selectedUniversityId) {
+    // 초기 선택 대학
+    if (data.page?.selectedUniversityId) {
       const initialSelected = data.universities.find(
         (uni) => uni.id === data.page.selectedUniversityId
       );
       setSelectedUniversity(initialSelected || null);
     }
 
-    if (data.exams.reference.nextImportantDate) {
-      setDDayNextExam(calculateDday(data.exams.reference.nextImportantDate));
-    }
-    setDDaySuneung(200);
+    // 수능 D-day (없으면 200으로 표시)
+    const suneungDate = data.exams?.reference?.suneungDate || null;
+    const d = calculateDday(suneungDate);
+    setDDaySuneung(d !== null ? d : 200);
   }, []);
 
   useEffect(() => {
@@ -88,17 +91,9 @@ export default function UniversityInfo() {
     }
   }, [searchQuery, universityData]);
 
-  const handleBackClick = () => {
-    navigate("/home");
-  };
-
-  const handleProfileClick = () => {
-    navigate("/mypage");
-  };
-
-  const handleUniversitySelect = (university) => {
-    setSelectedUniversity(university);
-  };
+  const handleBackClick = () => navigate("/home");
+  const handleProfileClick = () => navigate("/mypage");
+  const handleUniversitySelect = (university) => setSelectedUniversity(university);
 
   return (
     <div className="bg-[#000] w-full min-h-screen flex items-center justify-center">
@@ -139,14 +134,15 @@ export default function UniversityInfo() {
             </h1>
             <p className="font-normal text-[#000000] text-xs [font-family:'Noto_Sans_KR',Helvetica] tracking-[0] leading-[normal]">
               <span>다음 모의고사까지 </span>
-              {/* <span className="font-bold">{dDayNextExam !== null ? dDayNextExam : "N"}일</span> */}
+              {/* Home.jsx 스타일로 항상 '-' 표시 */}
               <span className="font-bold">-일</span>
               <span> 남았습니다!</span>
             </p>
             <p className="font-normal text-[#000000] text-xs [font-family:'Noto_Sans_KR',Helvetica] tracking-[0] leading-[normal]">
               <span>수능까지 </span>
-              <span className="font-bold">{dDaySuneung !== null ? dDaySuneung : "M"}일</span>
-              {/* <span className="font-bold">22일</span> */}
+              <span className="font-bold">
+                {dDaySuneung !== null ? dDaySuneung : "M"}일
+              </span>
               <span> 남았습니다!</span>
             </p>
           </section>

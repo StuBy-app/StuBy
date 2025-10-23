@@ -204,7 +204,6 @@ let nextTimerId = timers.length > 0 ? Math.max(...timers.map((t) => t.id)) + 1 :
 
 // ------- User APIs -------
 export const registerUser = (newUser) => {
-  // newUser: { username, password?, name, age?, email, gender, affiliation, school, grade, desiredUniversities, provider? }
   if (users.some((user) => user.username === newUser.username)) {
     console.log("Username already exists.");
     return null;
@@ -314,10 +313,7 @@ export const getSchoolGrades = (userId) =>
   schoolGrades.filter((grade) => grade.userId === userId);
 
 // ------- Groups APIs -------
-export const getGroups = (userId) => {
-  // 현재는 모든 그룹 반환 (실제 서비스에서는 userId 기반 필터링/참여 여부 적용)
-  return groups;
-};
+export const getGroups = (userId) => groups;
 
 export const createGroup = (ownerId, groupData) => {
   const newGroup = { ...groupData, id: nextGroupId++, ownerId };
@@ -363,22 +359,17 @@ export const deleteTimer = (userId, timerId) => {
 
 // ------- Ranking APIs -------
 export const getRankingData = (userId, date, category) => {
-  // date: "YYYY-MM-DD", category: "personal" | "groups" | "friends"
   const dataForDate = rankingData.find((d) => d.date === date);
   if (!dataForDate) return [];
   return dataForDate[category] || [];
 };
 
 /* ========================================================================
-   아래부터는 애니마 구현에 필요한 '팔로잉/투두' 기능을 "추가"한 부분
-   (기존 코드 수정 없음)
+   팔로잉/투두
    ======================================================================== */
-
-// tomorrow 상수 추가 (기존 today를 활용)
 const tomorrow = new Date(today);
 tomorrow.setDate(today.getDate() + 1);
 
-// 팔로잉 유저 더미 데이터
 let followingUsers = [
   { id: "f1", name: "강미경", avatar: "https://c.animaapp.com/mghllw7nnesCnv/img/ellipse-10-1.png" },
   { id: "f2", name: "노소정", avatar: "https://c.animaapp.com/mghllw7nnesCnv/img/ellipse-11-1.png" },
@@ -387,7 +378,6 @@ let followingUsers = [
   { id: "f5", name: "최재원", avatar: "https://c.animaapp.com/mghllw7nnesCnv/img/ellipse-14-1.png" },
 ];
 
-// 투두 더미 데이터
 let todos = [
   { id: 1, userId: 1, subject: "수학", note: "미적분까지 복습하기", done: false, date: formatDateToYYYYMMDD(today) },
   { id: 2, userId: 1, subject: "과목", note: "복습할 내용 작성", done: true,  date: formatDateToYYYYMMDD(today) },
@@ -395,18 +385,10 @@ let todos = [
 ];
 let nextTodoId = todos.length > 0 ? Math.max(...todos.map((t) => t.id)) + 1 : 1;
 
-// 팔로잉/투두 API
-export const getFollowingUsers = (userId) => {
-  return followingUsers;
-};
-
-export const getTodos = (userId) => {
-  return todos.filter((todo) => todo.userId === userId);
-};
-
-export const getTodosByDate = (userId, dateString) => {
-  return todos.filter((todo) => todo.userId === userId && todo.date === dateString);
-};
+export const getFollowingUsers = (userId) => followingUsers;
+export const getTodos = (userId) => todos.filter((todo) => todo.userId === userId);
+export const getTodosByDate = (userId, dateString) =>
+  todos.filter((todo) => todo.userId === userId && todo.date === dateString);
 
 export const addTodo = (userId, todoData) => {
   const newTodo = { ...todoData, id: nextTodoId++, userId };
@@ -438,10 +420,9 @@ export const deleteTodo = (userId, todoId) => {
 };
 
 /* ========================================================================
-   ⬇⬇⬇ 여기서부터 "추가"된 부분: UniversityInfo (수능/모의고사 연동)
+   UniversityInfo (수능/모의고사/검정고시)
    ======================================================================== */
 
-// University Info (모의고사/검정고시/수능 날짜 포함)
 const universityInfoData = {
   page: {
     title: "D-day",
@@ -537,14 +518,182 @@ const universityInfoData = {
       },
     ],
     reference: {
-      nextImportantDate: "2025-03-26", // (선택) 예시 값
+      nextImportantDate: "2025-03-26", // (선택)
       suneungDate: "2025-11-13",       // ✅ 실제 수능 D-day 계산용
     },
   },
 };
 
-// UniversityInfo 화면에서 호출
 export const getUniversityInfoData = () => universityInfoData;
-
-// 필요한 경우 헬퍼도 export 할 수 있음
 export { formatDateToYYYYMMDD };
+
+/* =========================================================
+   ▶ AI 헬퍼: 대학/전형 조회 + 점수 기반 지원가능성/약점 분석
+   ========================================================= */
+
+/* =========================================================
+   AI Buddy(버디) 채팅 저장소 + Export (AIBuddy.jsx에서 사용)
+   ========================================================= */
+
+// 대화 상태(메모리)
+const aibuddyChatData = {
+  systemMessages: {
+    enterNotice: "버디와의 채팅을 시작합니다.",
+  },
+  autoGreet: true,
+  greetMessage: [
+    "안녕하세요! AI 챗봇 버디입니다.",
+    "궁금한게 있다면 언제든지 물어보세요! 버디는 늘 여기 있답니다!",
+  ],
+  messages: [], // 초기에는 비워둠
+};
+
+let nextMessageId = 1;
+
+// 대화 상태 읽기
+export const getAIBuddyChatData = () => aibuddyChatData;
+
+// 메시지 추가(유저/AI 공통)
+export const addAIBuddyMessage = (role, type, content, images = []) => {
+  // 같은 내용이 연속 두 번 들어가는 것 방지(선택)
+  const last = aibuddyChatData.messages[aibuddyChatData.messages.length - 1];
+  if (last && last.role === role && last.type === "text" && last.content === content) {
+    return last;
+  }
+
+  const newMessage = {
+    id: `m${nextMessageId++}`,
+    role,               // "user" | "assistant"
+    type,               // "text" | "image"
+    content,
+    images,
+    createdAt: new Date().toISOString(),
+  };
+  aibuddyChatData.messages.push(newMessage);
+  return newMessage;
+};
+
+
+// 1) 대학 텍스트 매칭
+export const findUniversityByText = (text) => {
+  if (!text) return null;
+  const q = String(text).toLowerCase().trim();
+  const list = universityInfoData.universities || [];
+  return (
+    list.find((u) => {
+      const keys = [u.name, ...(u.keywords || [])].map((s) =>
+        String(s).toLowerCase()
+      );
+      return keys.some((k) => k.includes(q));
+    }) || null
+  );
+};
+
+// 2) 전형/일정, 수능/모평 헬퍼
+export const getUniversityAdmissions = (univId) => {
+  const u = (universityInfoData.universities || []).find((x) => x.id === univId);
+  return u ? u.admissions : null;
+};
+export const getSuneungDate = () =>
+  universityInfoData.exams?.reference?.suneungDate || null;
+
+export const getMockExamByMonth = (monthNum) => {
+  const m = Number(monthNum);
+  if (!m) return null;
+  return (universityInfoData.exams?.mock2025 || []).find((e) => e.month === m) || null;
+};
+
+// 3) 최신 점수 가져오기 (모의/학교)
+export const getLatestMockGrade = (userId) => {
+  const list = (mockGrades || []).filter((g) => g.userId === userId);
+  return list.length ? list[list.length - 1] : null; // 가장 마지막 입력을 최신으로
+};
+export const getLatestSchoolGrade = (userId) => {
+  const list = (schoolGrades || []).filter((g) => g.userId === userId);
+  return list.length ? list[list.length - 1] : null;
+};
+
+// 4) 과목 평균/약점 추출 (모의고사/학교 성적 각각)
+const avgFromMock = (g) => ({
+  kor: (g.korean1 + g.korean2) / 2,
+  math: (g.math1 + g.math2) / 2,
+  eng: g.english,
+  elective: (g.elective1 + g.elective2) / 2,
+  hist: g.history,
+});
+const avgFromSchool = (g) => ({
+  kor: g.korean,
+  math: g.math,
+  eng: g.english,
+  elective: Array.isArray(g.customSubjects) && g.customSubjects.length
+    ? g.customSubjects.reduce((s, x) => s + (x.score || 0), 0) / g.customSubjects.length
+    : 0,
+  hist: 0, // 학교 성적에 한국사 필드 없을 수 있음
+});
+
+const findWeakAreas = (avg, threshold = 85) => {
+  const tips = [];
+  if (avg.kor < threshold) tips.push("국어(독서/문학) 안정화");
+  if (avg.math < threshold) tips.push("수학(개념·고난도) 보완");
+  if (avg.eng < threshold) tips.push("영어(어휘·독해) 강화");
+  if (avg.elective < threshold) tips.push("탐구(개념·기출 반복)");
+  if (avg.hist !== undefined && avg.hist < threshold) tips.push("한국사 기출 누적");
+  return tips;
+};
+
+// 5) 단순 컷라인(총점 기준) — 필요시 조정
+const UNIVERSITY_TOTAL_CUTOFFS = {
+  snu: 780,
+  pnu: 680,
+  knu: 650,
+};
+
+// 6) 라벨
+const labelByGap = (gap) => {
+  if (gap >= 20) return "매우 유리";
+  if (gap >= 0) return "유리";
+  if (gap >= -20) return "경쟁";
+  return "어려움";
+};
+
+// 7) 합격 가능성 평가 (source: "mock" | "school")
+export const evaluateAdmissionForUniversity = (userId, universityId, source = "mock") => {
+  const g =
+    source === "school" ? getLatestSchoolGrade(userId) : getLatestMockGrade(userId);
+  if (!g) return null;
+
+  // 총점
+  const userTotal =
+    source === "school"
+      ? g.total // 학교 성적 total 사용
+      : g.total; // 모의 total 사용
+
+  const cutoff = UNIVERSITY_TOTAL_CUTOFFS[universityId] ?? 700;
+  const gap = userTotal - cutoff;
+  const chance = labelByGap(gap);
+
+  const avg = source === "school" ? avgFromSchool(g) : avgFromMock(g);
+  const weakTips = findWeakAreas(avg);
+
+  return {
+    universityId,
+    userTotal,
+    cutoff,
+    gap,
+    chance,
+    weakTips, // 배열
+    areaAvg: avg,
+    source,
+  };
+};
+
+// 8) 상위 추천 (source 선택)
+export const evaluateAdmissionAll = (userId, source = "mock") => {
+  const uniList = universityInfoData.universities || [];
+  const results = [];
+  for (const u of uniList) {
+    const r = evaluateAdmissionForUniversity(userId, u.id, source);
+    if (r) results.push({ ...r, universityName: u.name });
+  }
+  return results.sort((a, b) => b.gap - a.gap);
+};
