@@ -420,7 +420,7 @@ export const deleteTodo = (userId, todoId) => {
 };
 
 /* ========================================================================
-   UniversityInfo (수능/모의고사/검정고시)
+   UniversityInfo (수능/모의고사/검정고시 + 대학 정보)
    ======================================================================== */
 
 const universityInfoData = {
@@ -438,12 +438,12 @@ const universityInfoData = {
       admissions: {
         early: {
           competitionRate: 9.07,
-          applicationPeriod: { start: "2025-09-01", end: "2025-09-07" },
+          applicationPeriod: { start: "2025-09-08", end: "2025-09-10" },
           notes: "서류 위주 전형, 일정은 학과별 상이할 수 있음",
         },
         regular: {
           competitionRate: 3.02,
-          applicationPeriod: { start: "2025-12-28", end: "2026-01-03" },
+          applicationPeriod: { start: "2025-12-29", end: "2026-12-31" },
           notes: "수능 위주 전형",
         },
       },
@@ -457,12 +457,12 @@ const universityInfoData = {
       admissions: {
         early: {
           competitionRate: 8.11,
-          applicationPeriod: { start: "2025-09-02", end: "2025-09-08" },
+          applicationPeriod: { start: "2025-09-09", end: "2025-09-12" },
           notes: "",
         },
         regular: {
           competitionRate: 3.52,
-          applicationPeriod: { start: "2025-12-29", end: "2026-01-04" },
+          applicationPeriod: { start: "2025-12-29", end: "2026-12-31" },
           notes: "",
         },
       },
@@ -476,25 +476,48 @@ const universityInfoData = {
       admissions: {
         early: {
           competitionRate: 8.37,
-          applicationPeriod: { start: "2025-09-03", end: "2025-09-09" },
+          applicationPeriod: { start: "2025-09-08", end: "2025-09-12" },
           notes: "",
         },
         regular: {
           competitionRate: 3.51,
-          applicationPeriod: { start: "2025-12-30", end: "2026-01-05" },
+          applicationPeriod: { start: "2025-12-29", end: "2026-12-31" },
           notes: "",
         },
       },
       keywords: ["경북대", "KNU", "경북대학교"],
     },
+    {
+      id: "dau",
+      name: "동아대학교",
+      logoUrl: "/src/Img/dau.png",
+      location: {
+        address: "부산광역시 사하구 낙동대로 550번길 37",
+        lat: 35.1195,
+        lng: 128.9683,
+      },
+      admissions: {
+        early: {
+          competitionRate: 5.97,
+          applicationPeriod: { start: "2025-09-08", end: "2025-09-12" },
+          notes: "서류 위주 전형, 일정은 학과별 상이할 수 있음",
+        },
+        regular: {
+          competitionRate: 6.0,
+          applicationPeriod: { start: "2025-12-29", end: "2026-12-31" },
+          notes: "수능 위주 전형",
+        },
+      },
+      keywords: ["동아대", "DAU", "동아대학교"],
+    },
   ],
   exams: {
     mock2025: [
-      { month: 3,  name: "3월 학력평가", date: "2025-03-26" },
-      { month: 5,  name: "5월 모의고사", date: "2025-05-08" },
-      { month: 6,  name: "6월 모의평가", date: "2025-06-04" },
-      { month: 7,  name: "7월 모의고사", date: "2025-07-09" },
-      { month: 9,  name: "9월 모의평가", date: "2025-09-03" },
+      { month: 3, name: "3월 학력평가", date: "2025-03-26" },
+      { month: 5, name: "5월 모의고사", date: "2025-05-08" },
+      { month: 6, name: "6월 모의평가", date: "2025-06-04" },
+      { month: 7, name: "7월 모의고사", date: "2025-07-09" },
+      { month: 9, name: "9월 모의평가", date: "2025-09-03" },
       { month: 10, name: "10월 모의고사", date: "2025-10-14" },
     ],
     ged2025: [
@@ -503,7 +526,7 @@ const universityInfoData = {
         name: "2025년 검정고시 1회",
         schedule: [
           { label: "원서접수", start: "2025-02-10", end: "2025-02-21" },
-          { label: "시험일",   start: "2025-04-13", end: "2025-04-13" },
+          { label: "시험일", start: "2025-04-13", end: "2025-04-13" },
           { label: "합격자발표", start: "2025-05-09", end: "2025-05-09" },
         ],
       },
@@ -512,14 +535,14 @@ const universityInfoData = {
         name: "2025년 검정고시 2회",
         schedule: [
           { label: "원서접수", start: "2025-06-16", end: "2025-06-20" },
-          { label: "시험일",   start: "2025-08-10", end: "2025-08-10" },
+          { label: "시험일", start: "2025-08-10", end: "2025-08-10" },
           { label: "합격자발표", start: "2025-09-05", end: "2025-09-05" },
         ],
       },
     ],
     reference: {
       nextImportantDate: "2025-03-26", // (선택)
-      suneungDate: "2025-11-13",       // ✅ 실제 수능 D-day 계산용
+      suneungDate: "2025-11-13", // ✅ 실제 수능 D-day 계산용
     },
   },
 };
@@ -531,50 +554,7 @@ export { formatDateToYYYYMMDD };
    ▶ AI 헬퍼: 대학/전형 조회 + 점수 기반 지원가능성/약점 분석
    ========================================================= */
 
-/* =========================================================
-   AI Buddy(버디) 채팅 저장소 + Export (AIBuddy.jsx에서 사용)
-   ========================================================= */
-
-// 대화 상태(메모리)
-const aibuddyChatData = {
-  systemMessages: {
-    enterNotice: "버디와의 채팅을 시작합니다.",
-  },
-  autoGreet: true,
-  greetMessage: [
-    "안녕하세요! AI 챗봇 버디입니다.",
-    "궁금한게 있다면 언제든지 물어보세요! 버디는 늘 여기 있답니다!",
-  ],
-  messages: [], // 초기에는 비워둠
-};
-
-let nextMessageId = 1;
-
-// 대화 상태 읽기
-export const getAIBuddyChatData = () => aibuddyChatData;
-
-// 메시지 추가(유저/AI 공통)
-export const addAIBuddyMessage = (role, type, content, images = []) => {
-  // 같은 내용이 연속 두 번 들어가는 것 방지(선택)
-  const last = aibuddyChatData.messages[aibuddyChatData.messages.length - 1];
-  if (last && last.role === role && last.type === "text" && last.content === content) {
-    return last;
-  }
-
-  const newMessage = {
-    id: `m${nextMessageId++}`,
-    role,               // "user" | "assistant"
-    type,               // "text" | "image"
-    content,
-    images,
-    createdAt: new Date().toISOString(),
-  };
-  aibuddyChatData.messages.push(newMessage);
-  return newMessage;
-};
-
-
-// 1) 대학 텍스트 매칭
+// 대학 텍스트 매칭 (이름/키워드에 포함되면 매칭)
 export const findUniversityByText = (text) => {
   if (!text) return null;
   const q = String(text).toLowerCase().trim();
@@ -589,7 +569,6 @@ export const findUniversityByText = (text) => {
   );
 };
 
-// 2) 전형/일정, 수능/모평 헬퍼
 export const getUniversityAdmissions = (univId) => {
   const u = (universityInfoData.universities || []).find((x) => x.id === univId);
   return u ? u.admissions : null;
@@ -603,17 +582,17 @@ export const getMockExamByMonth = (monthNum) => {
   return (universityInfoData.exams?.mock2025 || []).find((e) => e.month === m) || null;
 };
 
-// 3) 최신 점수 가져오기 (모의/학교)
+// 최신 성적
 export const getLatestMockGrade = (userId) => {
   const list = (mockGrades || []).filter((g) => g.userId === userId);
-  return list.length ? list[list.length - 1] : null; // 가장 마지막 입력을 최신으로
+  return list.length ? list[list.length - 1] : null;
 };
 export const getLatestSchoolGrade = (userId) => {
   const list = (schoolGrades || []).filter((g) => g.userId === userId);
   return list.length ? list[list.length - 1] : null;
 };
 
-// 4) 과목 평균/약점 추출 (모의고사/학교 성적 각각)
+// 평균/약점
 const avgFromMock = (g) => ({
   kor: (g.korean1 + g.korean2) / 2,
   math: (g.math1 + g.math2) / 2,
@@ -625,10 +604,12 @@ const avgFromSchool = (g) => ({
   kor: g.korean,
   math: g.math,
   eng: g.english,
-  elective: Array.isArray(g.customSubjects) && g.customSubjects.length
-    ? g.customSubjects.reduce((s, x) => s + (x.score || 0), 0) / g.customSubjects.length
-    : 0,
-  hist: 0, // 학교 성적에 한국사 필드 없을 수 있음
+  elective:
+    Array.isArray(g.customSubjects) && g.customSubjects.length
+      ? g.customSubjects.reduce((s, x) => s + (x.score || 0), 0) /
+        g.customSubjects.length
+      : 0,
+  hist: 0,
 });
 
 const findWeakAreas = (avg, threshold = 85) => {
@@ -641,14 +622,14 @@ const findWeakAreas = (avg, threshold = 85) => {
   return tips;
 };
 
-// 5) 단순 컷라인(총점 기준) — 필요시 조정
+// 컷라인(총점 기준) — 단순 모델
 const UNIVERSITY_TOTAL_CUTOFFS = {
   snu: 780,
   pnu: 680,
   knu: 650,
+  dau: 640,
 };
 
-// 6) 라벨
 const labelByGap = (gap) => {
   if (gap >= 20) return "매우 유리";
   if (gap >= 0) return "유리";
@@ -656,18 +637,16 @@ const labelByGap = (gap) => {
   return "어려움";
 };
 
-// 7) 합격 가능성 평가 (source: "mock" | "school")
-export const evaluateAdmissionForUniversity = (userId, universityId, source = "mock") => {
+export const evaluateAdmissionForUniversity = (
+  userId,
+  universityId,
+  source = "mock"
+) => {
   const g =
     source === "school" ? getLatestSchoolGrade(userId) : getLatestMockGrade(userId);
   if (!g) return null;
 
-  // 총점
-  const userTotal =
-    source === "school"
-      ? g.total // 학교 성적 total 사용
-      : g.total; // 모의 total 사용
-
+  const userTotal = g.total;
   const cutoff = UNIVERSITY_TOTAL_CUTOFFS[universityId] ?? 700;
   const gap = userTotal - cutoff;
   const chance = labelByGap(gap);
@@ -681,13 +660,12 @@ export const evaluateAdmissionForUniversity = (userId, universityId, source = "m
     cutoff,
     gap,
     chance,
-    weakTips, // 배열
+    weakTips,
     areaAvg: avg,
     source,
   };
 };
 
-// 8) 상위 추천 (source 선택)
 export const evaluateAdmissionAll = (userId, source = "mock") => {
   const uniList = universityInfoData.universities || [];
   const results = [];
@@ -696,4 +674,184 @@ export const evaluateAdmissionAll = (userId, source = "mock") => {
     if (r) results.push({ ...r, universityName: u.name });
   }
   return results.sort((a, b) => b.gap - a.gap);
+};
+
+/* =========================================================
+   AI Buddy(버디) 채팅 저장소 + API
+   ========================================================= */
+
+const aibuddyChatData = {
+  systemMessages: {
+    enterNotice: "버디와의 채팅을 시작합니다.",
+  },
+  autoGreet: true,
+  greetMessage: [
+    "안녕하세요! AI 챗봇 버디입니다.",
+    "궁금한게 있다면 언제든지 물어보세요! 버디는 늘 여기 있답니다!",
+  ],
+  messages: [],
+};
+
+let nextMessageId = 1;
+
+export const getAIBuddyChatData = () => aibuddyChatData;
+
+export const addAIBuddyMessage = (role, type, content, images = []) => {
+  const last = aibuddyChatData.messages[aibuddyChatData.messages.length - 1];
+  if (last && last.role === role && last.type === "text" && last.content === content) {
+    return last;
+  }
+  const newMessage = {
+    id: `m${nextMessageId++}`,
+    role,
+    type,
+    content,
+    images,
+    createdAt: new Date().toISOString(),
+  };
+  aibuddyChatData.messages.push(newMessage);
+  return newMessage;
+};
+
+/* =========================================================
+   자연어 질문 처리기 (AIBuddy에서 사용)
+   ========================================================= */
+
+const friendlyTail = " 또 궁금한게 있나요? 🙂";
+const daysUntil = (dateStr) => {
+  if (!dateStr) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return null;
+  d.setHours(0, 0, 0, 0);
+  return Math.ceil((d - today) / (1000 * 60 * 60 * 24));
+};
+
+export const generateAIResponse = (rawText, userId) => {
+  const text = String(rawText || "").trim();
+  if (!text) return null;
+
+  // 종료 인사
+  if (/(고마워|고맙|감사|땡큐|thanks?|thx|수고)/i.test(text)) {
+    return "고맙긴요! 다음에 또 궁금한게 있다면 버디를 찾아와주세요! 🙌";
+  }
+
+  // 인사
+  if (/(^|\s)(안녕|안녕하세요|하이|hello|hi)(\s|$)/i.test(text)) {
+    return "안녕하세요! AI 챗봇 버디입니다. 무엇을 도와드릴까요?";
+  }
+
+  // 대학명 추출(축약형 ‘서울대’ 처리 포함)
+  const uni =
+    findUniversityByText(text) ||
+    (text.includes("서울대") ? findUniversityByText("서울대학교") : null);
+
+  // ===== ① 경쟁률 =====
+  if (/(경쟁률|합격률)/i.test(text) && uni) {
+    const ad = getUniversityAdmissions(uni.id);
+    if (ad) {
+      const early = ad.early?.competitionRate ?? "정보 없음";
+      const regular = ad.regular?.competitionRate ?? "정보 없음";
+      return `${uni.name} 경쟁률 안내입니다.\n- 수시: ${early} : 1\n- 정시: ${regular} : 1${friendlyTail}`;
+    }
+    return `${uni.name} 경쟁률 정보를 찾지 못했어요.${friendlyTail}`;
+  }
+
+  // ===== ② 원서/접수/일정 =====
+  if (/(원서|접수|기간|모집요강|언제|일정)/i.test(text) && uni) {
+    const ad = getUniversityAdmissions(uni.id);
+    if (ad) {
+      const e = ad.early?.applicationPeriod;
+      const r = ad.regular?.applicationPeriod;
+      const eLine = e ? `수시 접수: ${e.start} ~ ${e.end}` : "수시 접수: 정보 없음";
+      const rLine = r ? `정시 접수: ${r.start} ~ ${r.end}` : "정시 접수: 정보 없음";
+      return `${uni.name} 전형 일정입니다.\n${eLine}\n${rLine}${friendlyTail}`;
+    }
+    return `${uni.name} 전형 일정을 찾지 못했어요.${friendlyTail}`;
+  }
+
+  // ===== ③ 대학 기본 정보(주소 등) =====
+  if (/(어디|주소|위치|캠퍼스|기본 정보|기본정보)/i.test(text) && uni) {
+    return `${uni.name} 기본 정보입니다. 주소: ${uni.location.address}${friendlyTail}`;
+  }
+
+  // ===== ④ 수능 D-day =====
+  if (/(수능|d-?day)/i.test(text)) {
+    const dd = daysUntil(getSuneungDate());
+    if (dd == null) return `수능 날짜 정보를 찾지 못했어요.${friendlyTail}`;
+    if (dd > 0) return `수능까지 D-${dd}일입니다. 응원해요!${friendlyTail}`;
+    if (dd === 0) return `오늘이 수능일입니다. 침착하게 최선을 다해요!${friendlyTail}`;
+    return `수능일이 지났습니다. 고생 많았어요.${friendlyTail}`;
+  }
+
+  // ===== ⑤ 모의고사(월) =====
+  const monthMatch = text.match(/(\d+)\s*월/);
+  if (/(모의|학력평가|모평)/.test(text) && monthMatch) {
+    const mm = Number(monthMatch[1]);
+    const exam = getMockExamByMonth(mm);
+    if (exam) return `${mm}월 모의고사 일정: ${exam.name} — ${exam.date}${friendlyTail}`;
+    return `${mm}월 모의고사 일정을 찾지 못했어요.${friendlyTail}`;
+  }
+
+  // ===== ⑥ 합격 가능성/지원 가능? (모의/학교 공통) =====
+  if (/(가능성|갈\s*수|붙을|지원|가능\?|될까|될까요)/i.test(text)) {
+    // 데이터 소스 추론
+    const source =
+      /(학교|내신|학생부)/i.test(text) ? "school" : "mock";
+
+    const latest =
+      source === "school"
+        ? getLatestSchoolGrade(userId)
+        : getLatestMockGrade(userId);
+
+    if (!latest) {
+      return "먼저 점수를 입력해 주세요! (예: 국어/수학/영어/탐구/한국사 및 총점) 입력 후 다시 물어보면 분석해 드릴게요 🙂";
+    }
+
+    // 특정 대학
+    if (uni) {
+      const r = evaluateAdmissionForUniversity(userId, uni.id, source);
+      if (!r) return `${uni.name} 분석을 할 수 없었어요.${friendlyTail}`;
+      const gapText = r.gap >= 0 ? `컷보다 +${r.gap}` : `컷보다 ${r.gap}`;
+      const tipText =
+        r.weakTips.length > 0
+          ? `보완 추천: ${r.weakTips.join(", ")}`
+          : "과목 밸런스가 좋아요. 지금 페이스 유지!";
+      return `${uni.name} 합격 가능성: **${r.chance}** (${gapText})\n내 총점: ${r.userTotal} / 컷: ${r.cutoff}\n${tipText}${friendlyTail}`;
+    }
+
+    // 대학 미지정 → 상위 3곳 추천
+    const all = evaluateAdmissionAll(userId, source);
+    if (!all || all.length === 0) return `분석 결과가 없어요.${friendlyTail}`;
+
+    const top = all.slice(0, 3);
+    const lines = top.map(
+      (x, i) =>
+        `${i + 1}. ${x.universityName} — ${x.chance} (총점 ${x.userTotal}, 컷 ${x.cutoff}, gap ${x.gap >= 0 ? "+" + x.gap : x.gap})`
+    );
+    const tip = top[0].weakTips.length
+      ? `\n추천 보완: ${top[0].weakTips.join(", ")}`
+      : "";
+    return `최근 점수 기준 추천 대학 TOP3\n${lines.join("\n")}${tip}${friendlyTail}`;
+  }
+
+  // ===== ⑦ 약점/어떤 공부를 해야 해? =====
+  if (/(부족|약점|보완|어떤 공부|무엇을 공부|어디를 공부)/i.test(text)) {
+    // source 추론: 학교/모의 키워드
+    const source =
+      /(학교|내신|학생부)/i.test(text) ? "school" : "mock";
+    const g =
+      source === "school" ? getLatestSchoolGrade(userId) : getLatestMockGrade(userId);
+    if (!g) {
+      return "먼저 모의고사 또는 학교 성적을 입력해 주세요. 입력 후 다시 물어보면 약점을 분석해 드릴게요 🙂";
+    }
+    const avg = source === "school" ? avgFromSchool(g) : avgFromMock(g);
+    const tips = findWeakAreas(avg);
+    if (tips.length === 0) return `전 과목 밸런스가 좋습니다. 지금 페이스 유지!${friendlyTail}`;
+    return `현재 보완이 필요한 영역: ${tips.join(", ")}${friendlyTail}`;
+  }
+
+  // ===== ⑧ 기본 fallback =====
+  return "아직 학습되지 않은 질문이에요. ‘서울대학교 경쟁률 알려줘’, ‘부산대 접수 기간’, ‘수능 D-day’, ‘내 점수로 어디 가능?’처럼 물어보면 답해드릴 수 있어요!";
 };

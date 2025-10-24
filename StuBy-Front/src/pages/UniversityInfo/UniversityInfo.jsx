@@ -7,10 +7,10 @@ import {
   PieChart as PieChartIcon,
   MessageCircle as MessageCircleIcon,
 } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "../../components/button";
-import { Card, CardContent } from "../../components/card";
+import { Card } from "../../components/card";
 import { Input } from "../../components/input";
 import { getUniversityInfoData } from "../../db";
 
@@ -21,6 +21,19 @@ const navItems = [
   { icon: PieChartIcon, label: "정보", path: "/info" },
   { icon: MessageCircleIcon, label: "AI 버디", path: "/aibuddy" },
 ];
+
+// 이미지 깨질 때 쓸 기본 로고 (inline SVG data URL)
+const DEFAULT_LOGO =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'>
+      <rect width='80' height='80' fill='#e7edff'/>
+      <g fill='#628af9'>
+        <circle cx='40' cy='28' r='14'/>
+        <rect x='18' y='46' width='44' height='16' rx='8'/>
+      </g>
+    </svg>`
+  );
 
 const calculateDday = (targetDateString) => {
   if (!targetDateString) return null;
@@ -49,19 +62,20 @@ const formatFullDateRange = (start, end) => {
 export default function UniversityInfo() {
   const navigate = useNavigate();
   const location = useLocation();
+
   const [universityData, setUniversityData] = useState([]);
   const [examsData, setExamsData] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredUniversities, setFilteredUniversities] = useState([]);
   const [selectedUniversity, setSelectedUniversity] = useState(null);
   const [dDaySuneung, setDDaySuneung] = useState(null);
 
+  // ===== 초기 로드 =====
   useEffect(() => {
     const data = getUniversityInfoData();
     setUniversityData(data.universities);
     setExamsData(data.exams);
 
-    // 초기 선택 대학
+    // 초기 선택 대학(예: 서울대)
     if (data.page?.selectedUniversityId) {
       const initialSelected = data.universities.find(
         (uni) => uni.id === data.page.selectedUniversityId
@@ -75,25 +89,40 @@ export default function UniversityInfo() {
     setDDaySuneung(d !== null ? d : 200);
   }, []);
 
-  useEffect(() => {
-    if (searchQuery.trim() === "") {
-      setFilteredUniversities(universityData);
-    } else {
-      setFilteredUniversities(
-        universityData.filter(
-          (uni) =>
-            uni.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            uni.keywords.some((keyword) =>
-              keyword.toLowerCase().includes(searchQuery.toLowerCase())
-            )
+  // ===== 검색 결과 (여기에는 동아대 포함) =====
+  const searchResults = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return [];
+    return universityData.filter(
+      (uni) =>
+        uni.name.toLowerCase().includes(q) ||
+        (uni.keywords || []).some((kw) =>
+          String(kw).toLowerCase().includes(q)
         )
-      );
-    }
+    );
   }, [searchQuery, universityData]);
+
+  // ===== 그리드(“내가 가고싶은…”): 동아대는 항상 제외 =====
+  const gridUniversities = useMemo(
+    () => universityData.filter((u) => u.id !== "dau"),
+    [universityData]
+  );
 
   const handleBackClick = () => navigate("/home");
   const handleProfileClick = () => navigate("/mypage");
   const handleUniversitySelect = (university) => setSelectedUniversity(university);
+
+  const Img = ({ src, alt, className }) => (
+    <img
+      src={src || DEFAULT_LOGO}
+      alt={alt}
+      className={className}
+      onError={(e) => {
+        e.currentTarget.onerror = null;
+        e.currentTarget.src = DEFAULT_LOGO;
+      }}
+    />
+  );
 
   return (
     <div className="bg-[#000] w-full min-h-screen flex items-center justify-center">
@@ -121,6 +150,10 @@ export default function UniversityInfo() {
                 className="w-full h-full object-cover"
                 alt="Profile"
                 src="https://c.animaapp.com/mghllw7nnesCnv/img/ellipse-9-1.png"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = DEFAULT_LOGO;
+                }}
               />
             </button>
           </nav>
@@ -132,13 +165,12 @@ export default function UniversityInfo() {
             <h1 className="[font-family:'Noto_Sans_KR',Helvetica] font-black text-[#628af9] text-[40px] tracking-[0] leading-[normal]">
               D-day
             </h1>
-            <p className="font-normal text-[#000000] text-xs [font-family:'Noto_Sans_KR',Helvetica] tracking-[0] leading-[normal]">
+            <p className="font-normal text-[#000000] text-xs [font-family:'Noto_Sans_KR',Helvetica]">
               <span>다음 모의고사까지 </span>
-              {/* Home.jsx 스타일로 항상 '-' 표시 */}
               <span className="font-bold">-일</span>
               <span> 남았습니다!</span>
             </p>
-            <p className="font-normal text-[#000000] text-xs [font-family:'Noto_Sans_KR',Helvetica] tracking-[0] leading-[normal]">
+            <p className="font-normal text-[#000000] text-xs [font-family:'Noto_Sans_KR',Helvetica]">
               <span>수능까지 </span>
               <span className="font-bold">
                 {dDaySuneung !== null ? dDaySuneung : "M"}일
@@ -154,15 +186,52 @@ export default function UniversityInfo() {
               placeholder="대학교 명이나 입시 정보를 검색해주세요"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-[50px] bg-white rounded-[50px] border-2 border-solid border-[#628af9] pl-16 pr-6 font-normal text-[11px] [font-family:'Noto_Sans_KR',Helvetica] tracking-[0] leading-[normal] placeholder:text-[#2323234c]"
+              className="w-full h-[50px] bg-white rounded-[50px] border-2 border-solid border-[#628af9] pl-16 pr-6 text-[11px] [font-family:'Noto_Sans_KR',Helvetica] placeholder:text-[#2323234c]"
             />
           </div>
 
-          {/* 선택된 대학 상세 카드 */}
+          {/* ===== 검색 결과 섹션 (동아대 포함 가능) ===== */}
+          {searchQuery.trim() !== "" && (
+            <section className="flex flex-col gap-3">
+              <h2 className="font-bold text-[#232323] text-sm [font-family:'Noto_Sans_KR',Helvetica]">
+                검색 결과
+              </h2>
+              {searchResults.length === 0 ? (
+                <div className="text-xs text-[#23232380]">검색 결과가 없습니다.</div>
+              ) : (
+                <div className="grid grid-cols-3 gap-3">
+                  {searchResults.map((uni) => (
+                    <Card
+                      key={uni.id}
+                      className="bg-white rounded-[10px] border-2 border-[#628af9] p-3 flex flex-col items-center text-center cursor-pointer hover:shadow-md transition-shadow"
+                      onClick={() => handleUniversitySelect(uni)}
+                    >
+                      <Img
+                        src={uni.logoUrl}
+                        alt={uni.name}
+                        className="w-10 h-10 object-contain mb-2"
+                      />
+                      <h3 className="font-bold text-[#232323] text-xs [font-family:'Noto_Sans_KR',Helvetica] leading-tight">
+                        {uni.name}
+                      </h3>
+                      <p className="text-[9px] text-[#23232380] [font-family:'Noto_Sans_KR',Helvetica] leading-tight mt-1">
+                        수시 {uni.admissions.early.competitionRate} : 1
+                      </p>
+                      <p className="text-[9px] text-[#23232380] [font-family:'Noto_Sans_KR',Helvetica] leading-tight">
+                        정시 {uni.admissions.regular.competitionRate} : 1
+                      </p>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* 선택된 대학 상세 카드 (검색/그리드 어디서 선택해도 노출) */}
           {selectedUniversity && (
             <Card className="bg-[#e7edff] rounded-[10px] border-0 p-4 flex flex-col gap-3">
               <div className="flex items-center gap-3">
-                <img
+                <Img
                   src={selectedUniversity.logoUrl}
                   alt={selectedUniversity.name}
                   className="w-10 h-10 object-contain"
@@ -173,8 +242,12 @@ export default function UniversityInfo() {
               </div>
               <div className="flex flex-col gap-1 text-[10px] [font-family:'Noto_Sans_KR',Helvetica] text-[#23232380]">
                 <p>📍 {selectedUniversity.location.address}</p>
-                <p>수시 경쟁률: {selectedUniversity.admissions.early.competitionRate} : 1</p>
-                <p>정시 경쟁률: {selectedUniversity.admissions.regular.competitionRate} : 1</p>
+                <p>
+                  수시 경쟁률: {selectedUniversity.admissions.early.competitionRate} : 1
+                </p>
+                <p>
+                  정시 경쟁률: {selectedUniversity.admissions.regular.competitionRate} : 1
+                </p>
                 <p>
                   수시 모집 기간:{" "}
                   {formatFullDateRange(
@@ -193,19 +266,23 @@ export default function UniversityInfo() {
             </Card>
           )}
 
-          {/* 대학 카드 리스트 */}
+          {/* ===== 그리드 섹션: 동아대는 항상 제외 ===== */}
           <section className="flex flex-col gap-4">
             <h2 className="font-bold text-[#232323] text-sm [font-family:'Noto_Sans_KR',Helvetica]">
               내가 가고싶은 대학교의 입시정보는?
             </h2>
             <div className="grid grid-cols-3 gap-3">
-              {filteredUniversities.map((uni) => (
+              {gridUniversities.map((uni) => (
                 <Card
                   key={uni.id}
                   className="bg-white rounded-[10px] border-2 border-[#628af9] p-3 flex flex-col items-center text-center cursor-pointer hover:shadow-md transition-shadow"
                   onClick={() => handleUniversitySelect(uni)}
                 >
-                  <img src={uni.logoUrl} alt={uni.name} className="w-10 h-10 object-contain mb-2" />
+                  <Img
+                    src={uni.logoUrl}
+                    alt={uni.name}
+                    className="w-10 h-10 object-contain mb-2"
+                  />
                   <h3 className="font-bold text-[#232323] text-xs [font-family:'Noto_Sans_KR',Helvetica] leading-tight">
                     {uni.name}
                   </h3>
@@ -255,12 +332,18 @@ export default function UniversityInfo() {
               </h2>
               <div className="grid grid-cols-2 gap-3">
                 {examsData.ged2025.map((ged, index) => (
-                  <Card key={index} className="bg-[#e7edff] rounded-[10px] border-0 p-3 flex flex-col gap-2">
+                  <Card
+                    key={index}
+                    className="bg-[#e7edff] rounded-[10px] border-0 p-3 flex flex-col gap-2"
+                  >
                     <h3 className="font-bold text-[#628af9] text-xs [font-family:'Noto_Sans_KR',Helvetica]">
                       {ged.name}
                     </h3>
                     {ged.schedule.map((item, itemIndex) => (
-                      <p key={itemIndex} className="text-[10px] text-[#232323] [font-family:'Noto_Sans_KR',Helvetica]">
+                      <p
+                        key={itemIndex}
+                        className="text-[10px] text-[#232323] [font-family:'Noto_Sans_KR',Helvetica]"
+                      >
                         <span className="font-medium text-[#23232380]">{item.label}: </span>
                         {formatDate(item.start)} ~ {formatDate(item.end)}
                       </p>
@@ -290,7 +373,7 @@ export default function UniversityInfo() {
                   }`}
                 />
                 <span
-                  className={`font-bold text-[10px] [font-family:'Noto_Sans_KR',Helvetica] tracking-[0] leading-[normal] ${
+                  className={`font-bold text-[10px] [font-family:'Noto_Sans_KR',Helvetica] ${
                     location.pathname === item.path ? "text-[#628af9]" : "text-[#2323234c]"
                   }`}
                 >
